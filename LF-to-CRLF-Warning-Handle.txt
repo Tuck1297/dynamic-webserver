@@ -1,0 +1,8 @@
+When setting up the repository I ran across some following errors: 
+
+warning: in the working copy of 'public/js/vendor.js', LF will be replaced by CRLF the next time Git touches it
+
+The following link discusses how to set up your machine based on what operating system you are using 
+so fewer errors will occur when commit and pulling from a repository. 
+
+https://stackoverflow.com/questions/5834014/lf-will-be-replaced-by-crlf-in-git-what-is-that-and-is-it-important
