@@ -1,0 +1,2 @@
+#Ignore commiting all the node modules to the repository.
+/node_modules
