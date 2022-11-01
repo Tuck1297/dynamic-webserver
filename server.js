@@ -30,8 +30,19 @@ app.use(express.static(public_dir));
 
 // GET request handler for home page '/' (redirect to desired route)
 app.get('/', (req, res) => {
-    let home = ''; // <-- change this
+    // desired route is homepage --> allows us to hide template file storage
+    let home = '/homepage';
     res.redirect(home);
+});
+
+// Dynamic File path for homepage --> index.html
+
+app.get('/homepage', (req, res) => {
+    // 1. Still need to add error handle
+    // 2. If there is any data from database add here
+    fs.readFile(path.join(template_dir, 'index.html'), (err, template) => {
+        res.status(200).type('html').send(template); 
+    });
 });
 
 /*
