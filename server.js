@@ -9,7 +9,7 @@ let sqlite3 = require('sqlite3');
 
 let public_dir = path.join(__dirname, 'public');
 let template_dir = path.join(__dirname, 'templates');
-let db_filename = path.join(__dirname, 'db', 'sector.db'); // <-- change this
+let db_filename = path.join(__dirname, 'db', 'Energy.sqlite3');
 
 let app = express();
 let port = 8000;
@@ -41,7 +41,7 @@ app.get('/homepage', (req, res) => {
     // 1. Still need to add error handle
     // 2. If there is any data from database add here
     fs.readFile(path.join(template_dir, 'index.html'), (err, template) => {
-        let query = 'SELECT Year FROM sector_annual_data';
+        let query = 'SELECT Year FROM AnnualSectorEnergy';
         db.all(query, [], (err, rows) => {
             // have an embedded one for state name population
             let response = template.toString(); 
@@ -122,6 +122,61 @@ app.get('/sector/:selected_sector', (req, res) => {
         res.status(200).type('html').send(response);
     });
 });
+
+app.get('/state/:state', (req, res) => {
+    let state = req.params.state
+
+    // todo add html template
+    fs.readFile(file_not_found.html, 'utf-8', (err, template) => {
+        // todo write query
+        let query = 
+            ``
+            
+        db.all(query, [], (err, rows) => {
+            let response = template.toString()
+            // todo replace placeholders
+            
+            res.status(200).type('html').send(response)
+        })
+    })
+})
+
+app.get('/total/annual/:year', (req, res) => {
+    let year = req.params.year
+
+    // todo add html template
+    fs.readFile(file_not_found.html, 'utf-8', (err, template) => {
+        // todo write query
+        let query = 
+            ``
+            
+        db.all(query, [], (err, rows) => {
+            let response = template.toString()
+            // todo replace placeholders
+
+            res.status(200).type('html').send(response)
+        })
+    })
+})
+
+app.get('/total/monthly/:month_id/:year', (req, res) => {
+    let monthID = req.params.month_id
+    let year = req.params.year
+
+    // todo add html template
+    fs.readFile(file_not_found.html, 'utf-8', (err, template) => {
+        // todo write query
+        let query = 
+            ``
+            
+        db.all(query, [], (err, rows) => {
+            let response = template.toString()
+            // todo replace placeholders
+            
+            res.status(200).type('html').send(response)
+        })
+    })
+})
 
 /*
 // Example GET request handler for data about a specific year
