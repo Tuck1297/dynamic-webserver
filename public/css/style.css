@@ -1,0 +1,31 @@
+/* Global CSS Properties */
+
+html {
+    font-size: 100%; 
+}
+
+body {
+    background-color: #ffffff;
+    background-image: url(/images/background-default.jpg); 
+    background-repeat: repeat-y; 
+    background-size: cover;
+}
+
+.center-content {
+    height: 1000px; 
+    /* background-color: rgba(136,136,136,0.6); */
+    background-color: white; 
+}
+
+.sidebar_buffer {
+    height: 20px;
+}
+
+/* 
+    Decisions: 
+    Text formatting: 
+    font-family
+    font-size
+    font-style
+    font-weight
+*/
