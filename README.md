@@ -15,7 +15,8 @@ sustainability topic chosen by the students working on this project.
         /monthly/:month_id/:year
     /state/:state
 ```
-Navigation is currently only populated in the homepage path. Tucker is currently working on pulling 
-that code out into its own method and have it be called in all the dynamic paths. 
+Navigation works across all dynampic paths. Error code still needs to be created for each unique dynamic path. 
 
-Added some basic foundation code to the error client response webpage.
+Website templates for navigation have been created. Need to finish design phase for rest of page. 
+
+Added some basic foundation code to the error client response webpage (.html file).
