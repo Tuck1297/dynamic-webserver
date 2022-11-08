@@ -22,23 +22,22 @@
   <div class="off-canvas position-left is-closed" id="offCanvasNestedPush" data-off-canvas>
     <div class="callout">
       <ul class="menu dropdown" 
-        data-responsive-menu="drilldown medium-dropdown">
+        data-responsive-menu="drilldown medium-accordion">
       <div class="sidebar_buffer"></div>
       <li>
       <a href="/homepage" target="_self">HOME</a>
       </li>
       <div class="sidebar_buffer"></div>
       <li>
-      <a target="_self">USA CONSUMPTION BY SECTOR</a>
-      <ul class="menu">
-        <li><a href="/sector/Residential" target="_self">Residential</a></li>
-        <li><a href="/sector/Commercial" target="_self">Commercial</a></li>
-        <li><a href="/sector/Industrial" target="_self">Industrial</a></li>
-        <li><a href="/sector/Transportation" target="_self">Transportation</a></li>
-        <li><a href="/sector/Electric" target="_self">Electric</a></li>
-      </ul>
+      <a target="_self">USA CONSUMPTION BY SECTOR ANNUAL</a>
+      <ul class="menu">%%List_Placeholder_Sector_Annual%%</ul>
       </li>
       <div class="sidebar_buffer"></div>
+      <li>
+        <a target="_self">USA CONSUMPTION BY SECTOR MONTHLY</a>
+        <ul class="menu">%%List_Placeholder_Sector_Monthly%%</ul>
+        </li>
+        <div class="sidebar_buffer"></div>
       <li>
       <a target="_self">USA CONSUMPTION BY STATE FOR 2020</a>
       <ul class="menu" style="max-height: 300px; overflow-y:scroll;">%%List_Placeholder_State%%</ul>
@@ -49,6 +48,11 @@
       <ul class="menu" style="max-height: 300px; overflow-y:scroll;">%%List_Placeholder_Total_Year%%</ul>
       </li>
       <div class="sidebar_buffer"></div>
+      <li>
+        <a target="_self">USA CONSUMPTION TOTAL BY MONTH</a>
+        <ul class="menu">%%List_Placeholder_Total_Month%%</ul>
+        </li>
+        <div class="sidebar_buffer"></div>
     </ul>
 
       <button class="close-button" aria-label="Close menu" type="button" data-close>
