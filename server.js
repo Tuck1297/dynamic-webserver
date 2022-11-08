@@ -10,6 +10,7 @@ let sqlite3 = require('sqlite3');
 let public_dir = path.join(__dirname, 'public');
 let template_dir = path.join(__dirname, 'templates');
 let db_filename = path.join(__dirname, 'db', 'Energy.sqlite3');
+let js_dir = path.join(__dirname, 'js');
 
 let app = express();
 let port = 8000;
@@ -65,8 +66,10 @@ app.get('/homepage', (req, res) => {
 app.get('/:sector/annual/:year', (req, res) => {
     let sector = req.params.sector
     let year = req.params.year
-
-    // todo add html template
+    // previous and next buttons will be based on sector and year that are requested
+    // --> do next sector year 
+    // --> do previous sector year
+    // --> if sector year is prior or after defined years then have button disappear
     fs.readFile(path.join(template_dir, 'sector.html'), 'utf-8', (err, template) => {
         populateNavigation(template, (response) => {
             // todo write query
@@ -91,7 +94,7 @@ app.get('/:sector/monthly/:month/:year', (req, res) => {
     let year = req.params.year
     let month = req.params.month
 
-    // todo add html template
+    // same with annual but need to also include monthly in the logic
     fs.readFile(path.join(template_dir, 'sector.html'), 'utf-8', (err, template) => {
 
         populateNavigation(template, (response) => {
