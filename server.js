@@ -52,77 +52,9 @@ app.get('/homepage', (req, res) => {
                 return
             })
         }
-        let query = 'SELECT Year FROM AnnualSectorEnergy WHERE sector_id=1;'
-        db.all(query, [], (err, rows) => {
-            // If database error occurs
-            if (err) {
-                // Retrieve error client notice template
-                fs.readFile(path.join(template_dir, 'file_not_found.html'), (err, template) => {
-                    if (err) {
-                        // In case client notice template cannot be accessed
-                        res.status(404).type('text').send('Please check your request and try again...')
-                    }
-                    res.status(404).type('html').send(template)
-                    return
-                })
-                res.status(404).type('html').send(template)
-                return
-            }
-            // Populate Client Navigation
-            // Navigation for Total Annual
-            let response = template.toString() 
-            let total_years = ""
-            let sector_years = ""
-            for (let i = 0; i < rows.length; i++) {
-                total_years = total_years + `<li><a href="/total/annual/${rows[i].year}" \
-                target="_self">${rows[i].year}</a></li>`
-                sector_years = sector_years + `<li><a href="/sector/annual/${rows[i].year}" \
-                target="_self">${rows[i].year}</a></li>`
-            }
-            // Navigation for Total and Sector Monthly
-            let total_months = ""
-            let sector_months = ""
-            let months_array = ['January', 'Feburary', 'March', 'April', 'May', 'June', 'July',
-                                'August', 'September', 'October', 'November', 'December']
-            let ul_head_tag = `<ul class="menu" style="max-height: 300px; overflow-y:scroll;">`  
-            let ul_li_end_tag = `</ul></li> <div class="sidebar_buffer"></div>`          
-            for (let i = 0; i < 12; i++) {
-                let li_head_tag = `<li><a>${months_array[i]}</a>`
-                total_months = total_months + li_head_tag + ul_head_tag
-                sector_months = sector_months + li_head_tag + ul_head_tag 
-                for (let x  = 0; x < rows.length; x++) {
-                    total_months = total_months + `<li><a href="/total/monthly/${months_array[i]}/${rows[x].year}" \
-                    target="_self">${rows[x].year}</a></li>`
-                    sector_months = sector_months + `<li><a href="/sector/monthly/${months_array[i]}/${rows[x].year}" \
-                    target="_self">${rows[x].year}</a></li>`
-                }
-                
-                total_months = total_months + ul_li_end_tag
-                sector_months = sector_months + ul_li_end_tag
-            }
-            // Navigation for State
-            let state_array = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
-            , 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii'
-            , 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana'
-            , 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi'
-            , 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey'
-            , 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma'
-            , 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota'
-            , 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington'
-            , 'West Virginia', 'Wisconsin', 'Wyoming']
-            let state = ""
-            for (let i = 0; i < state_array.length; i++) {
-                state = state + `<li><a href="/state/${state_array[i]}" \
-                target="_self">${state_array[i]}</a></li>`
-            }
-
-            // queries to fill homepage with overview diagrams and tables will be executed here
-
-            response = response.replace('%%List_Placeholder_Total_Year%%', total_years)
-            response = response.replace('%%List_Placeholder_Sector_Annual%%', sector_years)
-            response = response.replace('%%List_Placeholder_Total_Month%%', total_months)
-            response = response.replace('%%List_Placeholder_Sector_Monthly%%', sector_months)
-            response = response.replace('%%List_Placeholder_State%%', state)
+        // Callback to navigation population function
+        populateNavigation(template, (response) => {
+            // remainder of page set up unique to sector, state, or total goes here
             res.status(200).type('html').send(response)
         })
     })
@@ -135,17 +67,20 @@ app.get('/:sector/annual/:year', (req, res) => {
     let year = req.params.year
 
     // todo add html template
-    fs.readFile(path.join(template_dir, 'file_not_found.html'), 'utf-8', (err, template) => {
-        // todo write query
-        let query = 
-            ``
-            
-        db.all(query, [], (err, rows) => {
-            let response = template.toString()
-            // todo replace placeholders
-            
-            res.status(200).type('html').send(response)
+    fs.readFile(path.join(template_dir, 'sector.html'), 'utf-8', (err, template) => {
+        populateNavigation(template, (response) => {
+            // todo write query
+            response = response.replace('%%Sector_Title:Date%%', `${sector}:${year}`)
+            let query =
+                ``
+
+            db.all(query, [], (err, rows) => {
+                // todo replace placeholders
+
+                res.status(200).type('html').send(response)
+            })
         })
+
     })
 })
 
@@ -157,17 +92,21 @@ app.get('/:sector/monthly/:month/:year', (req, res) => {
     let month = req.params.month
 
     // todo add html template
-    fs.readFile(path.join(template_dir, 'file_not_found.html'), 'utf-8', (err, template) => {
-        // todo write query
-        let query = 
-            ``
-            
-        db.all(query, [], (err, rows) => {
-            let response = template.toString()
-            // todo replace placeholders
-            
-            res.status(200).type('html').send(response)
+    fs.readFile(path.join(template_dir, 'sector.html'), 'utf-8', (err, template) => {
+
+        populateNavigation(template, (response) => {
+            // todo write query
+            response = response.replace('%%Sector_Title:Date%%', `${sector}:${month}-${year}`)
+            let query =
+                ``
+
+            db.all(query, [], (err, rows) => {
+                // todo replace placeholders
+
+                res.status(200).type('html').send(response)
+            })
         })
+
     })
 })
 
@@ -177,17 +116,21 @@ app.get('/state/:state', (req, res) => {
     let state = req.params.state
 
     // todo add html template
-    fs.readFile(path.join(template_dir, 'file_not_found.html'), 'utf-8', (err, template) => {
-        // todo write query
-        let query = 
-            ``
-            
-        db.all(query, [], (err, rows) => {
-            let response = template.toString()
-            // todo replace placeholders
-            
-            res.status(200).type('html').send(response)
+    fs.readFile(path.join(template_dir, 'state.html'), 'utf-8', (err, template) => {
+
+        populateNavigation(template, (response) => {
+            response = response.replace('%%State%%', `${state}`)
+            // todo write query
+            let query =
+                ``
+
+            db.all(query, [], (err, rows) => {
+                // todo replace placeholders
+
+                res.status(200).type('html').send(response)
+            })
         })
+
     })
 })
 
@@ -197,17 +140,22 @@ app.get('/total/annual/:year', (req, res) => {
     let year = req.params.year
 
     // todo add html template
-    fs.readFile(path.join(template_dir, 'file_not_found.html'), 'utf-8', (err, template) => {
-        // todo write query
-        let query = 
-            ``
-            
-        db.all(query, [], (err, rows) => {
-            let response = template.toString()
-            // todo replace placeholders
+    fs.readFile(path.join(template_dir, 'date.html'), 'utf-8', (err, template) => {
 
-            res.status(200).type('html').send(response)
+        populateNavigation(template, (response) => {
+            response = response.replace('%%Total:Date%%', `Total:${year}`)
+            // todo write query
+            let query =
+                ``
+
+            db.all(query, [], (err, rows) => {
+                // todo replace placeholders
+
+                res.status(200).type('html').send(response)
+            })
+
         })
+
     })
 })
 
@@ -218,19 +166,120 @@ app.get('/total/monthly/:month_id/:year', (req, res) => {
     let year = req.params.year
 
     // todo add html template
-    fs.readFile(path.join(template_dir, 'file_not_found.html'), 'utf-8', (err, template) => {
-        // todo write query
-        let query = 
-            ``
-            
-        db.all(query, [], (err, rows) => {
-            let response = template.toString()
-            // todo replace placeholders
-            
-            res.status(200).type('html').send(response)
+    fs.readFile(path.join(template_dir, 'date.html'), 'utf-8', (err, template) => {
+
+        populateNavigation(template, (response) => {
+            response = response.replace('%%Total:Date%%', `Total:${monthID}-${year}`)
+            // todo write query
+            let query =
+                ``
+
+            db.all(query, [], (err, rows) => {
+                // todo replace placeholders
+
+                res.status(200).type('html').send(response)
+            })
         })
+
     })
 })
+
+function populateNavigation(template, callback) {
+    let query = 'SELECT Year FROM AnnualSectorEnergy WHERE sector_id=1;'
+    db.all(query, [], (err, rows) => {
+        // If database error occurs
+        if (err) {
+            // Retrieve error client notice template
+            fs.readFile(path.join(template_dir, 'file_not_found.html'), (err, template) => {
+                if (err) {
+                    // In case client notice template cannot be accessed
+                    res.status(404).type('text').send('Please check your request and try again...')
+                }
+                res.status(404).type('html').send(template)
+                return
+            })
+            res.status(404).type('html').send(template)
+            return
+        }
+        query = 'SELECT sector_name FROM Sector;'
+        db.all(query, [], (err, rows_2) => {
+            // Populate Client Navigation
+            // Navigation for Sector Annual and Monthly
+            let response = template.toString()
+            let ul_head_tag = `<ul class="menu" style="max-height: 300px; overflow-y:scroll;">`
+            let ul_li_end_tag = `</ul></li> <div class="sidebar_buffer"></div>`
+
+            let months_array = ['January', 'Feburary', 'March', 'April', 'May', 'June', 'July',
+                'August', 'September', 'October', 'November', 'December']
+            let total_years = ""
+            let sector_years = ""
+            let total_months = ""
+            let sector_months = ""
+            // Add navigation links for Annual Total, Annual Sector and Monthly Sector
+            for (let i = 0; i < rows_2.length; i++) {
+                sector_years = sector_years + `<li><a>${rows_2[i].sector_name}</a>` + ul_head_tag
+                sector_months = sector_months + `<li><a>${rows_2[i].sector_name}</a>` + ul_head_tag
+                // Populate Monthly Sector
+                for (let j = 0; j < 12; j++) {
+                    let li_head_tag = `<li><a>${months_array[j]}</a>`
+                    sector_months = sector_months + li_head_tag + ul_head_tag
+                    // Populate Years in Montly Sector
+                    for (let x = 0; x < rows.length; x++) {
+                        sector_months = sector_months + `<li><a href="/sector/monthly/${months_array[i]}/${rows[x].year}" \
+                        target="_self">${rows[x].year}</a></li>`
+                    }
+                    sector_months = sector_months + ul_li_end_tag
+                }
+                // Populate Years in Annual Sector and Annual Total
+                for (let x = 0; x < rows.length; x++) {
+                    // Add navigation links for Annual Sector
+                    sector_years = sector_years + `<li><a href="/${rows_2[i].sector_name}/annual/${rows[x].year}" \
+                    target="_self">${rows[x].year}</a></li>`
+                    // Add navigation links for Annual Total
+                    total_years = total_years + `<li><a href="/total/annual/${rows[x].year}" \
+                    target="_self">${rows[x].year}</a></li>`
+                }
+                sector_years = sector_years + ul_li_end_tag
+                sector_months = sector_months + ul_li_end_tag
+            }
+            // Add navigation links for Monthly Total
+            for (let i = 0; i < 12; i++) {
+                let li_head_tag = `<li><a>${months_array[i]}</a>`
+                total_months = total_months + li_head_tag + ul_head_tag
+                for (let x = 0; x < rows.length; x++) {
+                    total_months = total_months + `<li><a href="/total/monthly/${months_array[i]}/${rows[x].year}" \
+                    target="_self">${rows[x].year}</a></li>`
+                }
+                total_months = total_months + ul_li_end_tag
+            }
+
+            // Add navigation links for State
+            let state_array = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
+                , 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii'
+                , 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana'
+                , 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi'
+                , 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey'
+                , 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma'
+                , 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota'
+                , 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington'
+                , 'West Virginia', 'Wisconsin', 'Wyoming']
+            let state = ""
+            for (let i = 0; i < state_array.length; i++) {
+                state = state + `<li><a href="/state/${state_array[i]}" \
+                target="_self">${state_array[i]}</a></li>`
+            }
+
+            response = response.replace('%%List_Placeholder_Total_Year%%', total_years)
+            response = response.replace('%%List_Placeholder_Sector_Annual%%', sector_years)
+            response = response.replace('%%List_Placeholder_Total_Month%%', total_months)
+            response = response.replace('%%List_Placeholder_Sector_Monthly%%', sector_months)
+            response = response.replace('%%List_Placeholder_State%%', state)
+            callback(response)
+        })
+
+    })
+
+}
 
 /*
 // Example GET request handler for data about a specific year
