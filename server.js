@@ -284,6 +284,8 @@ function populateNavigation(template, callback) {
 
 }
 
+//GET request handler for State data
+app.get()
 /*
 // Example GET request handler for data about a specific year
 app.get('/year/:selected_year', (req, res) => {
