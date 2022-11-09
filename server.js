@@ -257,7 +257,7 @@ function populateNavigation(template, callback) {
             }
 
             // Add navigation links for State
-            let state_array = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
+            let states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
                 , 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii'
                 , 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana'
                 , 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi'
@@ -266,17 +266,13 @@ function populateNavigation(template, callback) {
                 , 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota'
                 , 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington'
                 , 'West Virginia', 'Wisconsin', 'Wyoming']
-            let state = ""
-            for (let i = 0; i < state_array.length; i++) {
-                state = state + `<li><a href="/state/${state_array[i]}" \
-                target="_self">${state_array[i]}</a></li>`
-            }
-
+            let statePlaceholder = createHtmlListElements(states, (state) => `<a href="/state/${state}">${state}</a>`)
+        
             response = response.replace('%%List_Placeholder_Total_Year%%', total_years)
             response = response.replace('%%List_Placeholder_Sector_Annual%%', sector_years)
             response = response.replace('%%List_Placeholder_Total_Month%%', total_months)
             response = response.replace('%%List_Placeholder_Sector_Monthly%%', sector_months)
-            response = response.replace('%%List_Placeholder_State%%', state)
+            response = response.replace('%%List_Placeholder_State%%', statePlaceholder)
             callback(response)
         })
 
@@ -300,3 +296,9 @@ app.get('/year/:selected_year', (req, res) => {
 app.listen(port, () => {
     console.log('Now listening on port ' + port);
 });
+
+function createHtmlListElements(list, transform) {
+    return list
+        .map((element) => `<li>${transform(element)}</li>`)
+        .join('')
+}
