@@ -57,23 +57,23 @@ app.get('/homepage', (req, res) => {
         populateNavigation(template, (response) => {
             // remainder of page set up unique to sector, state, or total goes here
             // Dynamic path for Javascript file
-            app.get('/javascript', (req, res) => {
-                fs.readFile(path.join(js_dir, 'script.js'), 'utf-8', (err, template) => {
-                    // Javascript altering happens here
-                    let query = "SELECT sector.sector_name, sum(total) as sum FROM AnnualSectorEnergy join Sector WHERE \
-                    Sector.sector_id=AnnualSectorEnergy.sector_id AND year=2021 group by Sector.sector_name; "
-                    db.all(query, [], (equery_1_rr, rows) => {
-                        let response = template.toString();
-                        let format = "["
-                        for (let i = 0; i < rows.length - 1; i++) {
-                            format = format + `["${rows[i].sector_name}", ${rows[i].sum}],`
-                        }
-                        format = format + `["${rows[rows.length - 1].sector_name}", ${rows[rows.length - 1].sum}]]`
-                        response = response.replace('%%replace%%', format)
-                        res.status(200).type('js').send(response)
-                    })
-                })
-            })
+            // app.get('/javascript', (req, res) => {
+            //     fs.readFile(path.join(js_dir, 'script.js'), 'utf-8', (err, template) => {
+            //         // Javascript altering happens here
+            //         let query = "SELECT sector.sector_name, sum(total) as sum FROM AnnualSectorEnergy join Sector WHERE \
+            //         Sector.sector_id=AnnualSectorEnergy.sector_id AND year=2021 group by Sector.sector_name; "
+            //         db.all(query, [], (equery_1_rr, rows) => {
+            //             let response = template.toString();
+            //             let format = "["
+            //             for (let i = 0; i < rows.length - 1; i++) {
+            //                 format = format + `["${rows[i].sector_name}", ${rows[i].sum}],`
+            //             }
+            //             format = format + `["${rows[rows.length - 1].sector_name}", ${rows[rows.length - 1].sum}]]`
+            //             response = response.replace('%%replace%%', format)
+            //             res.status(200).type('js').send(response)
+            //         })
+            //     })
+            // })
             res.status(200).type('html').send(response)
         })
     })
