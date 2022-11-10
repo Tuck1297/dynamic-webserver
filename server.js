@@ -10,7 +10,7 @@ let sqlite3 = require('sqlite3');
 let public_dir = path.join(__dirname, 'public');
 let template_dir = path.join(__dirname, 'templates');
 let db_filename = path.join(__dirname, 'db', 'Energy.sqlite3');
-let js_dir = path.join(__dirname, 'js');
+let js_dir = path.join(__dirname, 'public/js');
 
 let app = express();
 let port = 8000;
@@ -56,6 +56,24 @@ app.get('/homepage', (req, res) => {
         // Callback to navigation population function
         populateNavigation(template, (response) => {
             // remainder of page set up unique to sector, state, or total goes here
+            // Dynamic path for Javascript file
+            app.get('/javascript', (req, res) => {
+                fs.readFile(path.join(js_dir, 'script.js'), 'utf-8', (err, template) => {
+                    // Javascript altering happens here
+                    let query = "SELECT sector.sector_name, sum(total) as sum FROM AnnualSectorEnergy join Sector WHERE \
+                    Sector.sector_id=AnnualSectorEnergy.sector_id AND year=2021 group by Sector.sector_name; "
+                    db.all(query, [], (equery_1_rr, rows) => {
+                        let response = template.toString();
+                        let format = "["
+                        for (let i = 0; i < rows.length - 1; i++) {
+                            format = format + `["${rows[i].sector_name}", ${rows[i].sum}],`
+                        }
+                        format = format + `["${rows[rows.length - 1].sector_name}", ${rows[rows.length - 1].sum}]]`
+                        response = response.replace('%%replace%%', format)
+                        res.status(200).type('js').send(response)
+                    })
+                })
+            })
             res.status(200).type('html').send(response)
         })
     })
@@ -146,7 +164,7 @@ app.get('/total/annual/:year', (req, res) => {
     fs.readFile(path.join(template_dir, 'date.html'), 'utf-8', (err, template) => {
 
         populateNavigation(template, (response) => {
-            response = response.replace('%%Total:Date%%', `Total:${year}`)
+            response = response.replace('%%Total-Date%%', `Total:${year}`)
             // todo write query
             let query =
                 ``
@@ -172,7 +190,7 @@ app.get('/total/monthly/:month_id/:year', (req, res) => {
     fs.readFile(path.join(template_dir, 'date.html'), 'utf-8', (err, template) => {
 
         populateNavigation(template, (response) => {
-            response = response.replace('%%Total:Date%%', `Total:${monthID}-${year}`)
+            response = response.replace('%%Total-Date%%', `Total:${monthID}-${year}`)
             // todo write query
             let query =
                 ``
@@ -187,9 +205,23 @@ app.get('/total/monthly/:month_id/:year', (req, res) => {
     })
 })
 
+let states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
+    , 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii'
+    , 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana'
+    , 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi'
+    , 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey'
+    , 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma'
+    , 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota'
+    , 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington'
+    , 'West Virginia', 'Wisconsin', 'Wyoming']
+
+let months_array = ['January', 'Feburary', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December']
+
+/* Builds the navigation path for all dynamic pages */
 function populateNavigation(template, callback) {
     let query = 'SELECT Year FROM AnnualSectorEnergy WHERE sector_id=1;'
-    db.all(query, [], (err, rows) => {
+    db.all(query, [], (err, query_1_rows) => {
         // If database error occurs
         if (err) {
             // Retrieve error client notice template
@@ -205,79 +237,84 @@ function populateNavigation(template, callback) {
             return
         }
         query = 'SELECT sector_name FROM Sector;'
-        db.all(query, [], (err, rows_2) => {
+        db.all(query, [], (err, query_2_rows) => {
             // Populate Client Navigation
-            // Navigation for Sector Annual and Monthly
             let response = template.toString()
-            let ul_head_tag = `<ul class="menu" style="max-height: 300px; overflow-y:scroll;">`
-            let ul_li_end_tag = `</ul></li> <div class="sidebar_buffer"></div>`
-
-            let months_array = ['January', 'Feburary', 'March', 'April', 'May', 'June', 'July',
-                'August', 'September', 'October', 'November', 'December']
-            let total_years = ""
-            let sector_years = ""
-            let total_months = ""
-            let sector_months = ""
-            // Add navigation links for Annual Total, Annual Sector and Monthly Sector
-            for (let i = 0; i < rows_2.length; i++) {
-                sector_years = sector_years + `<li><a>${rows_2[i].sector_name}</a>` + ul_head_tag
-                sector_months = sector_months + `<li><a>${rows_2[i].sector_name}</a>` + ul_head_tag
-                // Populate Monthly Sector
-                for (let j = 0; j < 12; j++) {
-                    let li_head_tag = `<li><a>${months_array[j]}</a>`
-                    sector_months = sector_months + li_head_tag + ul_head_tag
-                    // Populate Years in Montly Sector
-                    for (let x = 0; x < rows.length; x++) {
-                        sector_months = sector_months + `<li><a href="/sector/monthly/${months_array[i]}/${rows[x].year}" \
-                        target="_self">${rows[x].year}</a></li>`
-                    }
-                    sector_months = sector_months + ul_li_end_tag
-                }
-                // Populate Years in Annual Sector and Annual Total
-                for (let x = 0; x < rows.length; x++) {
-                    // Add navigation links for Annual Sector
-                    sector_years = sector_years + `<li><a href="/${rows_2[i].sector_name}/annual/${rows[x].year}" \
-                    target="_self">${rows[x].year}</a></li>`
-                    // Add navigation links for Annual Total
-                    total_years = total_years + `<li><a href="/total/annual/${rows[x].year}" \
-                    target="_self">${rows[x].year}</a></li>`
-                }
-                sector_years = sector_years + ul_li_end_tag
-                sector_months = sector_months + ul_li_end_tag
-            }
+            // Add navigation links for Sector Monthly
+            let sectorMonthlyPlaceholder = addSectorMonthlyLinks(query_1_rows, query_2_rows)
+            // Add navigation links for Sector Annual 
+            let sectorAnnualPlaceholder = addSectorAnnualLinks(query_1_rows, query_2_rows)
+            // Add navigation links for Annual Total
+            let annualPlaceholder = addTotalAnnualLinks(query_1_rows)
             // Add navigation links for Monthly Total
-            for (let i = 0; i < 12; i++) {
-                let li_head_tag = `<li><a>${months_array[i]}</a>`
-                total_months = total_months + li_head_tag + ul_head_tag
-                for (let x = 0; x < rows.length; x++) {
-                    total_months = total_months + `<li><a href="/total/monthly/${months_array[i]}/${rows[x].year}" \
-                    target="_self">${rows[x].year}</a></li>`
-                }
-                total_months = total_months + ul_li_end_tag
-            }
-
+            let monthPlaceholder = addTotalMonthlyLinks(query_1_rows)
             // Add navigation links for State
-            let states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
-                , 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii'
-                , 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana'
-                , 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi'
-                , 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey'
-                , 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma'
-                , 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota'
-                , 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington'
-                , 'West Virginia', 'Wisconsin', 'Wyoming']
-            let statePlaceholder = createHtmlListElements(states, (state) => `<a href="/state/${state}">${state}</a>`)
-        
-            response = response.replace('%%List_Placeholder_Total_Year%%', total_years)
-            response = response.replace('%%List_Placeholder_Sector_Annual%%', sector_years)
-            response = response.replace('%%List_Placeholder_Total_Month%%', total_months)
-            response = response.replace('%%List_Placeholder_Sector_Monthly%%', sector_months)
+            let statePlaceholder = addStateLinks()
+            // Replace string placeholders
+            response = response.replace('%%List_Placeholder_Total_Year%%', annualPlaceholder)
+            response = response.replace('%%List_Placeholder_Sector_Annual%%', sectorAnnualPlaceholder)
+            response = response.replace('%%List_Placeholder_Total_Month%%', monthPlaceholder)
+            response = response.replace('%%List_Placeholder_Sector_Monthly%%', sectorMonthlyPlaceholder)
             response = response.replace('%%List_Placeholder_State%%', statePlaceholder)
             callback(response)
         })
 
     })
 
+}
+
+/* Creates and returns navigation links for Sector Montly Sub */
+function addSectorMonthlyLinks(query_1_rows, query_2_rows) {
+    //Sector
+        // Month
+            // Year
+    return createHtmlListElements(query_2_rows, (query_2_rows) =>
+            `<a>${query_2_rows.sector_name}</a><ul class="menu" style="max-height: 300px; overflow-y:scroll;">` +
+            createHtmlListElements(months_array, (month) =>
+                `<a>${month}</a><ul class="menu" style="max-height: 300px; overflow-y:scroll;">` +
+                createHtmlListElements(query_1_rows, (query_1_rows) =>
+                    `<a href=/${query_2_rows.sector_name}/monthly/${month}/${query_1_rows.year}>${query_1_rows.year}</a>`) +
+                    `</ul>`) + `</ul><div class="sidebar_buffer"></div>`);
+}
+
+/* Creates and returns navigation links for Sector Annual Sub */
+function addSectorAnnualLinks(query_1_rows, query_2_rows) {
+    // Sector
+        // Year
+    return createHtmlListElements(query_2_rows, (query_2_rows) =>
+            `<a>${query_2_rows.sector_name}</a><ul class="menu" style="max-height: 300px; overflow-y:scroll;">` +
+            createHtmlListElements(query_1_rows, (query_1_rows) =>
+                `<a href="/${query_2_rows.sector_name}/annual/${query_1_rows.year}">${query_1_rows.year}</a>`) +
+                `</ul><div class="sidebar_buffer"></div>`)
+}
+
+/* Creates and returns navigation links for Total Annual Sub */
+function addTotalAnnualLinks(query_1_rows) {
+    // Year
+    return createHtmlListElements(query_1_rows, (query_1_rows) => `<a href="/total/annual/${query_1_rows.year}">
+    ${query_1_rows.year}</a>`)
+}
+/* Creates and returns navigation links for Total Montly Sub */
+function addTotalMonthlyLinks(query_1_rows) {
+    // Month
+        // Year
+    return createHtmlListElements(months_array, (month) =>
+        `<a>${month}</a><ul class="menu" style="max-height: 300px; overflow-y:scroll;">` +
+        createHtmlListElements(query_1_rows, (query_1_rows) =>
+            `<a href="/total/monthly/${month}/${query_1_rows.year}">${query_1_rows.year}</a>`) +
+            `</ul><div class="sidebar_buffer"></div>`)
+}
+/* Creates and returns navigation links for State Sub */
+function addStateLinks() {
+    // State
+    return createHtmlListElements(states, (state) => `<a href="/state/${state}">${state}</a>`)
+}
+
+/* Wraps <li> tags around all input list elements and returns all concatnated together */
+function createHtmlListElements(list, transform) {
+    return list
+        .map((element) => `<li>${transform(element)}</li>`)
+        .join('')
 }
 
 /*
@@ -296,9 +333,3 @@ app.get('/year/:selected_year', (req, res) => {
 app.listen(port, () => {
     console.log('Now listening on port ' + port);
 });
-
-function createHtmlListElements(list, transform) {
-    return list
-        .map((element) => `<li>${transform(element)}</li>`)
-        .join('')
-}

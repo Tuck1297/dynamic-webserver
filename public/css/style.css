@@ -1,28 +1,63 @@
 /* Global CSS Properties */
 
 html {
-    font-size: 100%; 
-}
-
-body {
-    background-color: #ffffff;
-    background-image: url(/images/background-default.jpg); 
-    background-repeat: repeat-y; 
-    background-size: cover;
+    font-size: 100%;
 }
 
 p {
-    font-family:'Courier New', Courier, monospace;
+    font-family: 'Courier New', Courier, monospace;
     font-size: 1rem;
     font-style: normal;
     font-weight: 100;
 }
 
-.center-content {
-    /* height: 1000px;  */
-    /* background-color: rgba(136,136,136,0.6); */
-    background-color: white; 
+.shadow-down {
+    box-shadow: 0px 9px 27px 10px rgba(0, 0, 0, 1);
+    -webkit-box-shadow: 0px 9px 27px 10px rgba(0, 0, 0, 1);
+    -moz-box-shadow: 0px 9px 27px 10px rgba(0, 0, 0, 1);
+}
+
+.shadow-up {
+    box-shadow: 3px -9px 27px 24px rgba(0, 0, 0, 0.40);
+    -webkit-box-shadow: 3px -9px 27px 24px rgba(0, 0, 0, 0.40);
+    -moz-box-shadow: 3px -9px 27px 24px rgba(0, 0, 0, 0.40);
+}
+
+.header_format {
+    font-family: 'Courier New', Courier, monospace;
+    font-size: 3rem;
+    font-style: normal;
+    font-weight: 200;
+}
+
+.header_buffer_large {
+    height: 100px;
+}
+
+.body-content {
+    padding: 10px;
+    background-color: rgba(255, 255, 255, 0.6)
+}
+
+.line-format {
+    margin: 0 auto;
+    width: 75%;
+    border-style: double;
+    border-width: 5px;
+    border-color: black;
+    border-radius: 5px;
+}
+
+.content {
+    background-color: rgba(255, 255, 255, 0.6);
     text-align: center;
+}
+
+.p-content {
+    background-color: rgba(255, 255, 255, 0.8);
+    padding: 20px;
+    border-radius: 5px;
+    margin: 30px;
 }
 
 .sidebar_buffer {
@@ -30,20 +65,22 @@ p {
 }
 
 .error_center {
-    margin: auto; 
-    padding: 20px; 
-    background-color: rgba(120,120,120, 0.5);
+    margin: auto;
+    padding: 20px;
+    background-color: rgba(120, 120, 120, 0.5);
     border-radius: 10px;
     margin: 10px;
 }
+
 .image_format {
-    text-align: center;
+    padding: 50px;
 }
 
 .home_btn {
-    color:white;
+    color: white;
     padding: 3px;
 }
+
 .home_btn:hover {
     color: white;
     background-color: #1fa6e1;
@@ -51,12 +88,32 @@ p {
     padding: 3px;
 }
 
+.rotating-earth {
+    position: relative;
+    animation: 2.5s ease-out 0s 1 slide_in_left;
+}
 
-/* 
-    Decisions: 
-    Text formatting: 
-    font-family
-    font-size
-    font-style
-    font-weight
-*/
+@keyframes slide_in_left {
+    0% {
+        left: -300%;
+    }
+
+    100% {
+        left: 0%;
+    }
+}
+
+.total-general-graph {
+    /* background-color: blue; */
+    height: 500px;
+}
+
+.state-general-graph {
+    /* background-color: red;  */
+    height: 500px;
+}
+
+.sector-general-graph {
+    /* background-color: yellow; */
+    height: 500px;
+}
