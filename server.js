@@ -55,29 +55,35 @@ app.get('/homepage', (req, res) => {
         }
         // Callback to navigation population function
         populateNavigation(template, (response) => {
-            // remainder of page set up unique to sector, state, or total goes here
-            // Dynamic path for Javascript file
-            // app.get('/javascript', (req, res) => {
-            //     fs.readFile(path.join(js_dir, 'script.js'), 'utf-8', (err, template) => {
-            //         // Javascript altering happens here
-            //         let query = "SELECT sector.sector_name, sum(total) as sum FROM AnnualSectorEnergy join Sector WHERE \
-            //         Sector.sector_id=AnnualSectorEnergy.sector_id AND year=2021 group by Sector.sector_name; "
-            //         db.all(query, [], (equery_1_rr, rows) => {
-            //             let response = template.toString();
-            //             let format = "["
-            //             for (let i = 0; i < rows.length - 1; i++) {
-            //                 format = format + `["${rows[i].sector_name}", ${rows[i].sum}],`
-            //             }
-            //             format = format + `["${rows[rows.length - 1].sector_name}", ${rows[rows.length - 1].sum}]]`
-            //             response = response.replace('%%replace%%', format)
-            //             res.status(200).type('js').send(response)
-            //         })
-            //     })
-            // })
+            // Get request for javascript graph template
+            app.get('/javascript', (req, res) => {
+                // add error code if js file does not load
+                fs.readFile(path.join(js_dir, 'script.js'), 'utf-8', (err, template) => {
+                    let response2 = template.toString();
+                    // Javascript altering happens here
+                    let query = "SELECT sector.sector_name, sum(total) as sum FROM AnnualSectorEnergy join Sector WHERE \
+                    Sector.sector_id=AnnualSectorEnergy.sector_id AND year=2021 group by Sector.sector_name; "
+                    db.all(query, [], (err, rows) => {
+                        // add error code here
+                        let format = formatJavascriptData(rows, (rows) => ` y: ${rows.sum}, label: "${rows.sector_name}"`)
+                        format = format.slice(0, -1)
+                        response2 = response2.replace('%%replace_sector_data%%', format)
+                        res.status(200).type('js').send(response2)
+                    })
+                })
+            })
+
             res.status(200).type('html').send(response)
         })
     })
 })
+
+/* Wraps all data from list in {}, and returns all concatenated together */
+function formatJavascriptData(list, transform) {
+    return list
+        .map((element) => `{${transform(element)}},`)
+        .join('')
+}
 
 // Dynamic path for Sector Annual Data
 
