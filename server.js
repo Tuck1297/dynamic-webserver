@@ -55,7 +55,27 @@ app.get('/homepage', (req, res) => {
         }
         // Callback to navigation population function
         populateNavigation(template, (response) => {
+<<<<<<< Updated upstream
             // remainder of page set up unique to sector, state, or total goes here
+=======
+            // Get request for javascript graph template
+            app.get('/javascript', (req, res) => {
+                // add error code if js file does not load
+                fs.readFile(path.join(js_dir, 'script.js'), 'utf-8', (err, template) => {
+                    let response2 = template.toString();
+                    // Javascript altering happens here
+                    let query = "SELECT sector.sector_name, sum(total) as sum FROM AnnualSectorEnergy join Sector WHERE \
+                    Sector.sector_id=AnnualSectorEnergy.sector_id AND year=2021 group by Sector.sector_name; "
+                    db.all(query, [], (err, rows) => {
+                        // add error code here
+                        let format = formatJavascriptData(rows, (rows) => ` y: ${rows.sum}, label: "${rows.sector_name}"`)
+                        format = format.slice(0, -1)
+                        response2 = response2.replace('%%replace_sector_data%%', format)
+                        res.status(200).type('js').send(response2)
+                    })
+                })
+            })
+>>>>>>> Stashed changes
             res.status(200).type('html').send(response)
         })
     })
@@ -117,13 +137,13 @@ app.get('/:sector/monthly/:month/:year', (req, res) => {
 
 app.get('/state/:state', (req, res) => {
     let state = req.params.state
-
     // todo add html template
     fs.readFile(path.join(template_dir, 'state.html'), 'utf-8', (err, template) => {
 
         populateNavigation(template, (response) => {
             response = response.replace('%%State%%', `${state}`)
             // todo write query
+<<<<<<< Updated upstream
             let query =
                 ``
 
@@ -134,6 +154,29 @@ app.get('/state/:state', (req, res) => {
             })
         })
 
+=======
+            let query ='SELECT state, coal, natural_gas, \
+                    distillate_fuel, hgl, jet_fuel, \
+                    petroleum_gasoline, residual_fuel, other, \
+                    total_fossil_fuel, supplemental_gaseous_fuel, \
+                    biodiesel, ethenol from StateEnergy2020'
+            db.all(query, [state], (err, rows) => {
+                // todo replace placeholders
+                let response2 = template.toString()
+                // response = response.replace('%%CEREAL_INFO%%', rows[1].cereal);
+                let data = '';
+                console.log(rows)
+                // for(let i = 0; i < rows.length; i++){
+                //     data = data + '<tr>'
+                //     data = data + '<tb>' + rows[i].state + rows[i].coal + '</tb>'
+                //     data = data + '<td>' + rows[i].state + '<td>'
+                //     data = data + '<tr>'
+                // }
+                response2 = response2.replace('%%INFO%%', data)
+                res.status(200).type('html').send(response2)
+            })
+        })
+>>>>>>> Stashed changes
     })
 })
 
