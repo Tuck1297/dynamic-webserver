@@ -176,52 +176,34 @@ app.get('/state/:state', (req, res) => {
 
 // Dynamic path for Total Annual Data
 
-app.get('/total/annual/:year', (req, res) => {
+app.get('/total_annual/:year', (req, res) => {
     let year = req.params.year
 
-    // todo add html template
-    fs.readFile(path.join(template_dir, 'date.html'), 'utf-8', (err, template) => {
-
-        populateNavigation(template, (response) => {
-            response = response.replace('%%Total-Date%%', `Total:${year}`)
-            // todo write query
-            let query =
-                ``
-
-            db.all(query, [], (err, rows) => {
-                // todo replace placeholders
-
-                res.status(200).type('html').send(response)
-            })
-
-        })
-
+    createPageFromDynamicTemplate('total_annual.html', (page) => {
+        res.status(200).type('html').send(page)
     })
 })
 
 // Dynamic path for Total Monthly Data
-
-app.get('/total/monthly/:month_id/:year', (req, res) => {
-    let monthID = req.params.month_id
+// 
+app.get('/total_monthly/:month/:year', (req, res) => {
+    let monthID = req.params.month
     let year = req.params.year
 
-    // todo add html template
-    fs.readFile(path.join(template_dir, 'date.html'), 'utf-8', (err, template) => {
+    createPageFromDynamicTemplate('total_monthly.html', (page) => {
+        res.status(200).type('html').send(page)
+        return
+        // todo write query
+        let query =
+            ``
 
-        populateNavigation(template, (response) => {
-            response = response.replace('%%Total-Date%%', `Total:${monthID}-${year}`)
-            // todo write query
-            let query =
-                ``
+        db.all(query, [], (err, rows) => {
+            // todo replace placeholders
 
-            db.all(query, [], (err, rows) => {
-                // todo replace placeholders
-
-                res.status(200).type('html').send(response)
-            })
+            res.status(200).type('html').send(page)
         })
-
     })
+
 })
 
 let states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
@@ -237,38 +219,48 @@ let states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
 let months_array = ['January', 'Feburary', 'March', 'April', 'May', 'June', 'July',
     'August', 'September', 'October', 'November', 'December']
 
+function createPageFromDynamicTemplate(contentFileName, onContentInserted) {
+    let contentPath = path.join(template_dir, contentFileName)
+    let templatePath = path.join(template_dir, 'dynamic_route_template.html')
+    
+    fs.readFile(contentPath, (err, content) => {
+        if (err) {
+            console.log(err)
+        }
+
+        fs.readFile(templatePath, 'utf-8', (err, template) => {
+            if (err) {
+                console.log(err)
+            } else {
+                console.log('populating navigation');
+                populateNavigation(template, (navigationTemplate) => {
+                    let page = navigationTemplate.replace('%%Placeholder_Content%%', content)
+                    console.log('done!');
+                    onContentInserted(page)
+                })
+            }
+        })
+    }) 
+}
+
 /* Builds the navigation path for all dynamic pages */
 function populateNavigation(template, callback) {
     let query = 'SELECT Year FROM AnnualSectorEnergy WHERE sector_id=1;'
-    db.all(query, [], (err, query_1_rows) => {
-        // If database error occurs
-        if (err) {
-            // Retrieve error client notice template
-            fs.readFile(path.join(template_dir, 'file_not_found.html'), (err, template) => {
-                if (err) {
-                    // In case client notice template cannot be accessed
-                    res.status(404).type('text').send('Please check your request and try again...')
-                }
-                res.status(404).type('html').send(template)
-                return
-            })
-            res.status(404).type('html').send(template)
+    db.all(query, [], (dbError, query_1_rows) => {
+        if (dbError) {
+            display404Page()
             return
         }
         query = 'SELECT sector_name FROM Sector;'
         db.all(query, [], (err, query_2_rows) => {
             // Populate Client Navigation
             let response = template.toString()
-            // Add navigation links for Sector Monthly
-            let sectorMonthlyPlaceholder = addSectorMonthlyLinks(query_1_rows, query_2_rows)
-            // Add navigation links for Sector Annual 
-            let sectorAnnualPlaceholder = addSectorAnnualLinks(query_1_rows, query_2_rows)
-            // Add navigation links for Annual Total
-            let annualPlaceholder = addTotalAnnualLinks(query_1_rows)
-            // Add navigation links for Monthly Total
-            let monthPlaceholder = addTotalMonthlyLinks(query_1_rows)
-            // Add navigation links for State
-            let statePlaceholder = addStateLinks()
+            let sectorMonthlyPlaceholder = createSectorMonthlyLinks(query_1_rows, query_2_rows)
+            let sectorAnnualPlaceholder = createSectorAnnualLinks(query_1_rows, query_2_rows)
+            let annualPlaceholder = createTotalAnnualLinks(query_1_rows)
+            let monthPlaceholder = createTotalMonthlyLinks(query_1_rows)
+            let statePlaceholder = createStateLinks()
+
             // Replace string placeholders
             response = response.replace('%%List_Placeholder_Total_Year%%', annualPlaceholder)
             response = response.replace('%%List_Placeholder_Sector_Annual%%', sectorAnnualPlaceholder)
@@ -282,8 +274,18 @@ function populateNavigation(template, callback) {
 
 }
 
+function display404Page(res) {
+    fs.readFile(path.join(template_dir, 'file_not_found.html'), (err, template) => {
+        if (err) {
+            res.status(404).type('text').send('Please check your request and try again...')
+            return
+        }
+        res.status(404).type('html').send(template)            
+    })
+}
+
 /* Creates and returns navigation links for Sector Montly Sub */
-function addSectorMonthlyLinks(query_1_rows, query_2_rows) {
+function createSectorMonthlyLinks(query_1_rows, query_2_rows) {
     //Sector
         // Month
             // Year
@@ -297,7 +299,7 @@ function addSectorMonthlyLinks(query_1_rows, query_2_rows) {
 }
 
 /* Creates and returns navigation links for Sector Annual Sub */
-function addSectorAnnualLinks(query_1_rows, query_2_rows) {
+function createSectorAnnualLinks(query_1_rows, query_2_rows) {
     // Sector
         // Year
     return createHtmlListElements(query_2_rows, (query_2_rows) =>
@@ -308,13 +310,13 @@ function addSectorAnnualLinks(query_1_rows, query_2_rows) {
 }
 
 /* Creates and returns navigation links for Total Annual Sub */
-function addTotalAnnualLinks(query_1_rows) {
+function createTotalAnnualLinks(query_1_rows) {
     // Year
     return createHtmlListElements(query_1_rows, (query_1_rows) => `<a href="/total/annual/${query_1_rows.year}">
     ${query_1_rows.year}</a>`)
 }
 /* Creates and returns navigation links for Total Montly Sub */
-function addTotalMonthlyLinks(query_1_rows) {
+function createTotalMonthlyLinks(query_1_rows) {
     // Month
         // Year
     return createHtmlListElements(months_array, (month) =>
@@ -324,7 +326,7 @@ function addTotalMonthlyLinks(query_1_rows) {
             `</ul><div class="sidebar_buffer"></div>`)
 }
 /* Creates and returns navigation links for State Sub */
-function addStateLinks() {
+function createStateLinks() {
     // State
     return createHtmlListElements(states, (state) => `<a href="/state/${state}">${state}</a>`)
 }
