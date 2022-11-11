@@ -256,8 +256,8 @@ function populateNavigation(template, callback) {
                     `<a href=/${sn}/monthly/${m}/${y}>${y}</a>`
                 )
             let sectorAnnualPlaceholder = 
-                createNestedListElements(sectorNames, years, (s, y) =>
-                    `<a href="/${s}/annual/${y}">${y}</a>`
+                createNestedListElements(sectorNames, years, (sn, y) =>
+                    `<a href="/${sn}/annual/${y}">${y}</a>`
                 )
             let annualPlaceholder = 
                 createListElements(years, (y) => 
@@ -268,8 +268,8 @@ function populateNavigation(template, callback) {
                     `<a href="/total_monthly/${m}/${y}">${y}</a>`
                 )
             let statePlaceholder = 
-                createListElements(states, (state) => 
-                    `<a href="/state/${state}">${state}</a>`
+                createListElements(states, (s) => 
+                    `<a href="/state/${s}">${s}</a>`
                 )
 
             // Replace string placeholders
