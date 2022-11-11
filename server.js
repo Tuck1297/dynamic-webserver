@@ -186,22 +186,22 @@ app.get('/total_annual/:year', (req, res) => {
 
 // Dynamic path for Total Monthly Data
 // 
-app.get('/total_monthly/:month/:year', (req, res) => {
+app.get('/total_monthly/:month_id/:year', (req, res) => {
     let monthID = req.params.month
     let year = req.params.year
 
     createPageFromDynamicTemplate('total_monthly.html', (page) => {
         res.status(200).type('html').send(page)
         return
-        // todo write query
-        let query =
-            ``
+        // // todo write query
+        // let query =
+        //     ``
 
-        db.all(query, [], (err, rows) => {
-            // todo replace placeholders
+        // db.all(query, [], (err, rows) => {
+        //     // todo replace placeholders
 
-            res.status(200).type('html').send(page)
-        })
+        //     res.status(200).type('html').send(page)
+        // })
     })
 
 })
@@ -216,7 +216,7 @@ let states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
     , 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington'
     , 'West Virginia', 'Wisconsin', 'Wyoming']
 
-let months_array = ['January', 'Feburary', 'March', 'April', 'May', 'June', 'July',
+let months = ['January', 'Feburary', 'March', 'April', 'May', 'June', 'July',
     'August', 'September', 'October', 'November', 'December']
 
 function createPageFromDynamicTemplate(contentFileName, onContentInserted) {
@@ -245,33 +245,52 @@ function createPageFromDynamicTemplate(contentFileName, onContentInserted) {
 
 /* Builds the navigation path for all dynamic pages */
 function populateNavigation(template, callback) {
-    let query = 'SELECT Year FROM AnnualSectorEnergy WHERE sector_id=1;'
-    db.all(query, [], (dbError, query_1_rows) => {
+    let query1 = `SELECT year FROM AnnualSectorEnergy WHERE sector_id=1;`
+    let query2 = `SELECT sector_name FROM Sector;`
+
+    db.all(query1, [], (dbError, query_1_rows) => {
         if (dbError) {
             display404Page()
             return
         }
-        query = 'SELECT sector_name FROM Sector;'
-        db.all(query, [], (err, query_2_rows) => {
+        db.all(query2, [], (err, query_2_rows) => {
+            let years = query_1_rows.map((row) => row.year)
+            let sectorNames = query_2_rows.map((row) => row.sector_name)
+
             // Populate Client Navigation
-            let response = template.toString()
-            let sectorMonthlyPlaceholder = createSectorMonthlyLinks(query_1_rows, query_2_rows)
-            let sectorAnnualPlaceholder = createSectorAnnualLinks(query_1_rows, query_2_rows)
-            let annualPlaceholder = createTotalAnnualLinks(query_1_rows)
-            let monthPlaceholder = createTotalMonthlyLinks(query_1_rows)
-            let statePlaceholder = createStateLinks()
+            let sectorMonthlyPlaceholder = 
+                createDoublyNestedListElements(sectorNames, months, years, (sn, m, y) => 
+                    `<a href=/${sn}/monthly/${m}/${y}>${y}</a>`
+                )
+            let sectorAnnualPlaceholder = 
+                createNestedListElements(sectorNames, years, (s, y) =>
+                    `<a href="/${s}/annual/${y}">${y}</a>`
+                )
+            let annualPlaceholder = 
+                createListElements(years, (y) => 
+                    `<a href="/total/annual/${y}">${y}</a>`
+                )
+            let monthPlaceholder = 
+                createNestedListElements(months, years, (m, y) => 
+                    `<a href="/total_monthly/${m}/${y}">${y}</a>`
+                )
+            let statePlaceholder = 
+                createListElements(states, (state) => 
+                    `<a href="/state/${state}">${state}</a>`
+                )
 
             // Replace string placeholders
-            response = response.replace('%%List_Placeholder_Total_Year%%', annualPlaceholder)
-            response = response.replace('%%List_Placeholder_Sector_Annual%%', sectorAnnualPlaceholder)
-            response = response.replace('%%List_Placeholder_Total_Month%%', monthPlaceholder)
-            response = response.replace('%%List_Placeholder_Sector_Monthly%%', sectorMonthlyPlaceholder)
-            response = response.replace('%%List_Placeholder_State%%', statePlaceholder)
+            let response = template
+                .toString()
+                .replace('%%List_Placeholder_Total_Year%%', annualPlaceholder)
+                .replace('%%List_Placeholder_Sector_Annual%%', sectorAnnualPlaceholder)
+                .replace('%%List_Placeholder_Total_Month%%', monthPlaceholder)
+                .replace('%%List_Placeholder_Sector_Monthly%%', sectorMonthlyPlaceholder)
+                .replace('%%List_Placeholder_State%%', statePlaceholder)
+
             callback(response)
         })
-
     })
-
 }
 
 function display404Page(res) {
@@ -284,59 +303,53 @@ function display404Page(res) {
     })
 }
 
-/* Creates and returns navigation links for Sector Montly Sub */
-function createSectorMonthlyLinks(query_1_rows, query_2_rows) {
-    //Sector
-        // Month
-            // Year
-    return createHtmlListElements(query_2_rows, (query_2_rows) =>
-            `<a>${query_2_rows.sector_name}</a><ul class="menu" style="max-height: 300px; overflow-y:scroll;">` +
-            createHtmlListElements(months_array, (month) =>
-                `<a>${month}</a><ul class="menu" style="max-height: 300px; overflow-y:scroll;">` +
-                createHtmlListElements(query_1_rows, (query_1_rows) =>
-                    `<a href=/${query_2_rows.sector_name}/monthly/${month}/${query_1_rows.year}>${query_1_rows.year}</a>`) +
-                    `</ul>`) + `</ul><div class="sidebar_buffer"></div>`);
+function createDoublyNestedListElements(grandparentList, parentList, childList, childTransform) {
+    let elements = []
+
+    for (let g of grandparentList) {
+        elements.push(`<li> <a>${g}</a> <ul class="menu navParent">`)
+
+        for (let p of parentList) {
+            elements.push(`<li> <a>${p}</a> <ul class="menu navParent">`)
+
+            for (let c of childList) {
+                elements.push(createListElement(childTransform(g, p, c)))
+            }
+            elements.push(`</ul></li>`)
+        }
+        elements.push(`</ul><div class="sidebar_buffer"></div></li>`)
+    }
+
+    return elements.join('')
 }
 
-/* Creates and returns navigation links for Sector Annual Sub */
-function createSectorAnnualLinks(query_1_rows, query_2_rows) {
-    // Sector
-        // Year
-    return createHtmlListElements(query_2_rows, (query_2_rows) =>
-            `<a>${query_2_rows.sector_name}</a><ul class="menu" style="max-height: 300px; overflow-y:scroll;">` +
-            createHtmlListElements(query_1_rows, (query_1_rows) =>
-                `<a href="/${query_2_rows.sector_name}/annual/${query_1_rows.year}">${query_1_rows.year}</a>`) +
-                `</ul><div class="sidebar_buffer"></div>`)
-}
+function createNestedListElements(parentList, childList, childTransform) {
+    let elements = []
 
-/* Creates and returns navigation links for Total Annual Sub */
-function createTotalAnnualLinks(query_1_rows) {
-    // Year
-    return createHtmlListElements(query_1_rows, (query_1_rows) => `<a href="/total/annual/${query_1_rows.year}">
-    ${query_1_rows.year}</a>`)
-}
-/* Creates and returns navigation links for Total Montly Sub */
-function createTotalMonthlyLinks(query_1_rows) {
-    // Month
-        // Year
-    return createHtmlListElements(months_array, (month) =>
-        `<a>${month}</a><ul class="menu" style="max-height: 300px; overflow-y:scroll;">` +
-        createHtmlListElements(query_1_rows, (query_1_rows) =>
-            `<a href="/total/monthly/${month}/${query_1_rows.year}">${query_1_rows.year}</a>`) +
-            `</ul><div class="sidebar_buffer"></div>`)
-}
-/* Creates and returns navigation links for State Sub */
-function createStateLinks() {
-    // State
-    return createHtmlListElements(states, (state) => `<a href="/state/${state}">${state}</a>`)
+    for (let p of parentList) {
+        elements.push(`<li><a>${p}</a> <ul class="menu navParent">`)
+
+        for (let c of childList) {
+            elements.push(createListElement(childTransform(p, c)))
+        }
+        elements.push(`</ul><div class="sidebar_buffer"></div></li>`)
+    }
+    return elements.join('')
 }
 
 /* Wraps <li> tags around all input list elements and returns all concatnated together */
-function createHtmlListElements(list, transform) {
+function createListElements(list, transform) {
     return list
-        .map((element) => `<li>${transform(element)}</li>`)
+        .map(transform)
+        .map(createListElement)
         .join('')
 }
+
+function createListElement(content) {
+    return `<li>${content}</li>`
+}
+
+
 
 /*
 // Example GET request handler for data about a specific year
