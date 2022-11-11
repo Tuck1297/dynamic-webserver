@@ -175,7 +175,6 @@ app.get('/state/:state', (req, res) => {
 })
 
 // Dynamic path for Total Annual Data
-
 app.get('/total_annual/:year', (req, res) => {
     let year = req.params.year
 
@@ -185,23 +184,19 @@ app.get('/total_annual/:year', (req, res) => {
 })
 
 // Dynamic path for Total Monthly Data
-// 
 app.get('/total_monthly/:month_id/:year', (req, res) => {
     let monthID = req.params.month
     let year = req.params.year
 
-    createPageFromDynamicTemplate('total_monthly.html', (page) => {
-        res.status(200).type('html').send(page)
-        return
-        // // todo write query
-        // let query =
-        //     ``
+    createPageFromDynamicTemplate('total_monthly.html', (page) => {        
+        let query = `SELECT coal FROM MonthlyEnergy WHERE year = ?`
 
-        // db.all(query, [], (err, rows) => {
-        //     // todo replace placeholders
+        db.all(query, [year], (err, rows) => {
+            let coalConsumption = rows.map((row) => row.coal)
+            let finalPage = page.replace('%%Placeholder_Test%%', coalConsumption)
 
-        //     res.status(200).type('html').send(page)
-        // })
+            res.status(200).type('html').send(finalPage)
+        })
     })
 
 })
@@ -225,17 +220,15 @@ function createPageFromDynamicTemplate(contentFileName, onContentInserted) {
     
     fs.readFile(contentPath, (err, content) => {
         if (err) {
-            console.log(err)
+            onContentInserted(err)
         }
 
         fs.readFile(templatePath, 'utf-8', (err, template) => {
             if (err) {
-                console.log(err)
+                onContentInserted(err)
             } else {
-                console.log('populating navigation');
                 populateNavigation(template, (navigationTemplate) => {
                     let page = navigationTemplate.replace('%%Placeholder_Content%%', content)
-                    console.log('done!');
                     onContentInserted(page)
                 })
             }
