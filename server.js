@@ -148,16 +148,29 @@ app.get('/state/:state', (req, res) => {
         populateNavigation(template, (response) => {
             response = response.replace('%%State%%', `${state}`)
             // todo write query
-            let query =
-                ``
+            let query ='SELECT State,Coal,Natural Gas excluding Supplemental Gaseous Fuels,Distillate \
+                    Fuel Oil excluding Biodiesel,HGL,Jet Fuel,Petroleum Motor Gasoline excluding Fuel Ethanol , \
+                    Residual Fuel Oil,Other,total fossil,supplemental_gaseous_fuel,biodiesel,ethanol'
 
-            db.all(query, [], (err, rows) => {
+            db.all(query, [state], (err, rows) => {
                 // todo replace placeholders
-
+                let response = template.toString()
+                // response = response.replace('%%CEREAL_INFO%%', rows[1].cereal);
+                let data = '';
+                console.log(rows)
+                // for(let i = 0; i < rows.length; i++){
+                //     data = data + '<tr>'
+                //     data = data + '<tb>' + rows[i].state + rows[i].coal + '</tb>'
+                //     data = data + '<td>' + rows[i].state + '<td>'
+                //     data = data + '<tr>'
+                // }
+                response = response.replace('%%INFO%%', data);
+                console.log("this is working as intended")
                 res.status(200).type('html').send(response)
             })
+        console.log("We are inside the file")
         })
-
+    console.log("We are outside of the file.")
     })
 })
 
@@ -339,3 +352,26 @@ app.get('/year/:selected_year', (req, res) => {
 app.listen(port, () => {
     console.log('Now listening on port ' + port);
 });
+
+// //TODO: Specify where dataIndex comes from
+// let dataIndex = 1;
+// showCurrentData(dataIndex)
+
+// // Next/previous controls
+// function nextData(n) {
+//     showCurrentData(dataIndex += n)
+// }
+
+// Should update the page with data from the database
+// TODO: Should grab data from database
+// function showCurrentData(n) {
+//   let i;
+//   let data = document.getElementsByClassName("data");
+//   if (n > data.length) {dataIndex = 1}
+//   if (n < 1) {dataIndex = data.length}
+//   for (i = 0; i < data.length; i++) {
+//     data[i].style.display = "none"
+//   }
+//   data[dataIndex-1].style.display = "block"
+// }
+
