@@ -2,23 +2,27 @@
 <html lang="en">
 
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/css/style.css">
-    <link rel="icon" href="">
-    <link rel="stylesheet" href="/css/foundation.css">
-    <title>Homepage</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link rel="stylesheet" href="/css/style.css">
+  <link rel="icon" href="/images/earth.png">
+  <link rel="stylesheet" href="/css/foundation.css">
+  <script src="/js/canvasjs.min.js" type="text/javascript"></script>
+  
+  <title>Homepage</title>
 </head>
 
-<body style="background-image: url(/images/background-default.jpg); background-repeat: repeat-y; background-size: cover;">
+<body
+  style="background-image: url(/images/background-default.jpg); background-repeat: repeat-y; background-size: cover;">
   <!-- Title bar for all elements -->
-  <div class="title-bar" style="background-color: #1a8fc1;">
+  <div class="title-bar shadow-down" style="background-color: #1a8fc1;">
     <div class="title-bar-left">
       <button class="menu-icon" type="button" data-open="offCanvasNestedPush"></button>
     </div>
     <div class="title-bar-right">
       <div class="menu-text">
-        <p style="font-size: 1rem; padding-top:15px; padding-bottom:-10px;">Renewable Energy Consumption (USA) <img src="/images/icons8-env.png" alt="Image"></p>
+        <p style="font-size: 1rem; padding-top:15px; padding-bottom:-10px;">Renewable Energy Consumption (USA) <img
+            src="/images/icons8-env.png" alt="Image"></p>
       </div>
     </div>
   </div>
@@ -26,39 +30,38 @@
   <!-- Left sidebar elements -->
   <div class="off-canvas position-left is-closed" id="offCanvasNestedPush" data-off-canvas>
     <div class="callout">
-      <ul class="menu dropdown" 
-        data-responsive-menu="drilldown medium-accordion">
-      <div class="sidebar_buffer"></div>
-      <li>
-      <a href="/homepage" target="_self">HOME</a>
-      </li>
-      <div class="sidebar_buffer"></div>
-      <li>
-      <a target="_self">USA CONSUMPTION BY SECTOR ANNUAL</a>
-      <ul class="menu">%%List_Placeholder_Sector_Annual%%</ul>
-      </li>
-      <div class="sidebar_buffer"></div>
-      <li>
-        <a target="_self">USA CONSUMPTION BY SECTOR MONTHLY</a>
-        <ul class="menu">%%List_Placeholder_Sector_Monthly%%</ul>
+      <ul class="menu dropdown" data-responsive-menu="drilldown medium-accordion">
+        <div class="sidebar_buffer"></div>
+        <li>
+          <a href="/homepage" target="_self">HOME</a>
         </li>
         <div class="sidebar_buffer"></div>
-      <li>
-      <a target="_self">USA CONSUMPTION BY STATE FOR 2020</a>
-      <ul class="menu" style="max-height: 300px; overflow-y:scroll;">%%List_Placeholder_State%%</ul>
-      </li>
-      <div class="sidebar_buffer"></div>
-      <li>
-      <a target="_self">USA CONSUMPTION TOTAL BY YEAR</a>
-      <ul class="menu" style="max-height: 300px; overflow-y:scroll;">%%List_Placeholder_Total_Year%%</ul>
-      </li>
-      <div class="sidebar_buffer"></div>
-      <li>
-        <a target="_self">USA CONSUMPTION TOTAL BY MONTH</a>
-        <ul class="menu">%%List_Placeholder_Total_Month%%</ul>
+        <li>
+          <a target="_self">USA CONSUMPTION BY SECTOR ANNUAL</a>
+          <ul class="menu">%%List_Placeholder_Sector_Annual%%</ul>
         </li>
         <div class="sidebar_buffer"></div>
-    </ul>
+        <li>
+          <a target="_self">USA CONSUMPTION BY SECTOR MONTHLY</a>
+          <ul class="menu">%%List_Placeholder_Sector_Monthly%%</ul>
+        </li>
+        <div class="sidebar_buffer"></div>
+        <li>
+          <a target="_self">USA CONSUMPTION BY STATE FOR 2020</a>
+          <ul class="menu" style="max-height: 300px; overflow-y:scroll;">%%List_Placeholder_State%%</ul>
+        </li>
+        <div class="sidebar_buffer"></div>
+        <li>
+          <a target="_self">USA CONSUMPTION TOTAL BY YEAR</a>
+          <ul class="menu" style="max-height: 300px; overflow-y:scroll;">%%List_Placeholder_Total_Year%%</ul>
+        </li>
+        <div class="sidebar_buffer"></div>
+        <li>
+          <a target="_self">USA CONSUMPTION TOTAL BY MONTH</a>
+          <ul class="menu">%%List_Placeholder_Total_Month%%</ul>
+        </li>
+        <div class="sidebar_buffer"></div>
+      </ul>
 
       <button class="close-button" aria-label="Close menu" type="button" data-close>
         <span aria-hidden="true">&times;</span>
@@ -68,46 +71,54 @@
 
   <!-- This is where all the non-navigation bar information resides. -->
   <div class="off-canvas-content">
-        <div class="grid-x grid-padding-x">
-            <!-- Buffer for large and medium web pages -->
-            <div class="large-2 medium-1 small-0 cell"></div>
-            <div class="large-8 medium-10 small-12 center-content">
-                <div class="large-12 cell">
-                  <h1>Renewable Energy Consumption</h1>
-                  <div>
-                    <div class="large-8 medium-10 small-12 cell"></div>
-                    <img src="/images/gear.png" alt="Image 1">
-                    <img src="/images/gear.png" alt="Image_2">
-                    <img src="/images/gear.png" alt="Image_3">
-                  </div>
-                  <p>Welcome! This webpage is focused on providing you data concerning
-                    America's Renewable Energy Consumption recorded over the last few
-                    decades. We feel it is important to share this as it shows America's 
-                    ever increasing goals towards a cleaner and sustainable environment. 
-                    Although there is a long way to go this data shows how far science 
-                    and society have come.  
-                  </p>
-                  <!-- Graph 1 Divider - Total -->
-                  <div></div>
-                  <!-- Graph 2 Divider - State-->
-                  <div></div>
-                  <!-- Graph 3 Divider - Sector-->
-                  <div></div>
-                </div>
-                
-            </div>
-            <div class="large-2 medium-1 small-0 cell"></div>
+    <div class="grid-x">
+      <!-- Buffer for large and medium web pages -->
+      <div class="large-12 medium-12 small-12 cell">
+        <div class="grid-x">
+          <div class="large-5 medium-12 small-12 cell content">
+            <img class="image_format rotating-earth" src="/images/earth.gif" alt="Image 1">
+          </div>
+          <div class="large-7 medium-12 small-12 cell content">
+            <div class="header_buffer_large show-for-large show-for-xlarge"></div>
+            <h1 class="header_format">Renewable Energy Consumption</h1>
+            <div class="line-format"></div>
+            <h1 class="header_format">Homepage</h1>
+          </div>
         </div>
+        <div class="body-content">
+          <br><br><br>
+          <div class="p-content">
+            <p>Welcome! Here you will find information pertaining to America's
+              consumption of renewable energy resources. More than just a couple of
+              decades ago America ran mainly on oil and electricity. Since then there have
+              been innovations resulting in more environmentally friendly ways of 
+              generating energy. Every day we are getting closer to sustainability.
+            </p>
+          </div>
+          <br><br><br>
+          <br>
+          <div class="shadow-up grid-x">
+          <!-- Graph 1 Divider - Total -->
+          <div class="total-general-graph large-4 medium-12 small-12 cell" id="graph_1"></div>
+          <!-- Graph 2 Divider - State-->
+          <div class="state-general-graph large-4 medium-12 small-12 cell" id="graph_2"></div>
+          <!-- Graph 3 Divider - Sector-->
+          <div class="sector-general-graph large-4 medium-12 small-12 cell" id="graph_3"></div>
+          </div>
+        </div>
+      </div>
+    </div>
   </div>
 
-    <script src="/js/script.js"></script>
-    <script src="/js/jquery.js"></script>
-    <script src="/js/what-input.js"></script>
-    <script src="/js/foundation.js"></script>
-    <script>
-        $(document).foundation();
-    </script>
-    <script src="/js/app.js"></script>
+  <script src="/javascript"></script>
+  <script src="/js/jquery.js"></script>
+  <script src="/js/what-input.js"></script>
+  <script src="/js/foundation.js"></script>
+  </script>
+  <script>
+    $(document).foundation();
+  </script>
+  <script src="/js/app.js"></script>
 </body>
 
 </html>
