@@ -239,39 +239,70 @@ app.get('/:sector/monthly/:month/:year', (req, res) => {
 // Dynamic path for State Data
 
 app.get('/state/:state', (req, res) => {
-    let state = req.params.state
-
-    // todo add html template
-    fs.readFile(path.join(template_dir, 'state.html'), 'utf-8', (err, template) => {
-
-        populateNavigation(template, (response) => {
-            response = response.replace('%%State%%', `${state}`)
-            // todo write query
-            let query = 'SELECT State,Coal,Natural Gas excluding Supplemental Gaseous Fuels,Distillate \
-                    Fuel Oil excluding Biodiesel,HGL,Jet Fuel,Petroleum Motor Gasoline excluding Fuel Ethanol , \
-                    Residual Fuel Oil,Other,total fossil,supplemental_gaseous_fuel,biodiesel,ethanol'
-
-            db.all(query, [state], (err, rows) => {
-                // todo replace placeholders
-                let response = template.toString()
-                // response = response.replace('%%CEREAL_INFO%%', rows[1].cereal);
-                let data = '';
-                console.log(rows)
-                // for(let i = 0; i < rows.length; i++){
-                //     data = data + '<tr>'
-                //     data = data + '<tb>' + rows[i].state + rows[i].coal + '</tb>'
-                //     data = data + '<td>' + rows[i].state + '<td>'
-                //     data = data + '<tr>'
-                // }
-                response = response.replace('%%INFO%%', data);
-                console.log("this is working as intended")
-                res.status(200).type('html').send(response)
-            })
-            console.log("We are inside the file")
+    let state = req.params.state 
+    //add Javascript to head
+    let graphData = ''
+    let data = ''
+    //creating headers
+    data = data + '<tr>'
+    data = data + '<th>State</th>'
+    data = data + '<th>Coal</th>'
+    data = data + '<th>Natural Gas</th>'
+    data = data + '<th>Distillate Fuel</th>'
+    data = data + '<th>HGL</th>'
+    data = data + '<th>Jet Fuel</th>'
+    data = data + '<th>Petroleum Gasoline</th>'
+    data = data + '<th>Residual Fuel</th>'
+    data = data + '<th>Other</th>'
+    data = data + '<th>Total Fossil Fuel</th>'
+    data = data + '<th>Supplemental Gaseous Fuel</th>'
+    data = data + '<th>Biodiesel</th>'
+    data = data + '<th>Ethenol</th>'
+    data = data + '</tr>'
+    createPageFromDynamicTemplate('state.html', (page) => {
+        let query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
+        db.all(query, [state], (err, rows) => {
+            //Initializing
+            let state = rows.map((row) => row.state)
+            let coal = rows.map((row) => row.coal)
+            let naturalGas = rows.map((row) => row.natural_gas)
+            let distillateFuel = rows.map((row) => row.distillate_fuel)
+            let hgl = rows.map((row) => row.hgl)
+            let jetFuel = rows.map((row) => row.jet_fuel)
+            let petroleumGasoline = rows.map((row) => row.petroleum_gasoline)
+            let residualFuel = rows.map((row) => row.residual_fuel)
+            let other = rows.map((row) => row.other)
+            let totalFossilFuel = rows.map((row) => row.total_fossil_fuel)
+            let supplementalGaseousFuel = rows.map((row) => row.supplemental_gaseous_fuel)
+            let biodiesel = rows.map((row) => row.biodiesel)
+            let ethenol = rows.map((row) => row.ethenol)
+            //creating row
+            data = data + '<tr>'
+            data = data + '<td>' + state + '</td>' 
+            data = data + '<td>' + coal + '</td>' 
+            data = data + '<td>' + naturalGas + '</td>' 
+            data = data + '<td>' + distillateFuel + '</td>'
+            data = data + '<td>' + hgl + '</td>'
+            data = data + '<td>' + jetFuel + '</td>'
+            data = data + '<td>' + petroleumGasoline + '</td>'
+            data = data + '<td>' + residualFuel + '</td>'
+            data = data + '<td>' + other + '</td>'
+            data = data + '<td>' + totalFossilFuel + '</td>'
+            data = data + '<td>' + supplementalGaseousFuel + '</td>'
+            data = data + '<td>' + biodiesel + '</td>'
+            data = data + '<td>' + ethenol + '</td>'
+            data = data + '</tr>'
+            let finalPage = page.replace('%%Placeholder_Content%%', data)
+            res.status(200).type('html').send(finalPage)
         })
-        console.log("We are outside of the file.")
     })
+    // TODO MAKE GRAPH
+    // globalQueryConstaints = []
+    // globalQueryconstaints.push(state)
+    // js_data_query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
 })
+
+
 
 // Dynamic path for Total Annual Data
 app.get('/total_annual/:year', (req, res) => {
@@ -459,27 +490,4 @@ app.get('/year/:selected_year', (req, res) => {
 
 app.listen(port, () => {
     console.log('Now listening on port ' + port);
-});
-
-// //TODO: Specify where dataIndex comes from
-// let dataIndex = 1;
-// showCurrentData(dataIndex)
-
-// // Next/previous controls
-// function nextData(n) {
-//     showCurrentData(dataIndex += n)
-// }
-
-// Should update the page with data from the database
-// TODO: Should grab data from database
-// function showCurrentData(n) {
-//   let i;
-//   let data = document.getElementsByClassName("data");
-//   if (n > data.length) {dataIndex = 1}
-//   if (n < 1) {dataIndex = data.length}
-//   for (i = 0; i < data.length; i++) {
-//     data[i].style.display = "none"
-//   }
-//   data[dataIndex-1].style.display = "block"
-// }
-
+})
