@@ -15,6 +15,10 @@ let js_dir = path.join(__dirname, 'public/js');
 let app = express();
 let port = 8000;
 
+let globalQueryConstraints = []
+let homeGlobalData = []
+let js_data_query = ``
+
 // Open SQLite3 database (in read-only mode)
 let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
     if (err) {
@@ -45,7 +49,7 @@ function readFile(file, res) {
                 display404Page(res)
                 return
             }
-            else 
+            else
                 resolve(template)
         })
     })
@@ -59,7 +63,7 @@ function callDatabase(query, res) {
                 display404Page(res)
                 return
             }
-            else 
+            else
                 resolve(rows)
         })
     })
@@ -68,44 +72,49 @@ function callDatabase(query, res) {
 // Dynamic File path for homepage --> index.html
 app.get('/homepage', (req, res) => {
 
-    let query_1 = `SELECT sector.sector_name, sum(total) as sum FROM AnnualSectorEnergy JOIN Sector WHERE 
-        Sector.sector_id=AnnualSectorEnergy.sector_id AND year=2021 GROUP BY Sector.sector_name`    
-    let query_2 = `SELECT year, total_primary from AnnualEnergy`    
-    let query_3 = `SELECT State, ethenol FROM StateEnergy2020 WHERE State != "United States"`
-    const promises = [
-        callDatabase(query_1, res), 
-        callDatabase(query_2, res), 
-        callDatabase(query_3, res),
-        readFile(path.join(js_dir, 'script.js'), res),
-    ]
+
 
     createPageFromDynamicTemplate('index.html', (page) => {
         // If there was an retrieval error -- redirect to 404 error page
-        if (page.toString().slice(0,5) == 'Error') {
+        if (page.toString().slice(0, 5) == 'Error') {
             display404Page(res)
             return
         }
-        Promise.all(promises).then(result => {
-            // Once at this level we have all database data and javascript template
-            let [sector, total, state, js_page] = result;
-            
-            app.get('/javascript', (req, js_res) => {
-                // console.log(page)
-                let format_sector_data = formatJavascriptData(sector, (sector) => ` y: ${sector.sum}, label: "${sector.sector_name}"`)
-                let format_total_data = formatJavascriptData(total, (total) => ` y: ${total.total_primary}, label: "${total.year}"`)
-                let format_state_data = formatJavascriptData(state, (state) => ` y: parseFloat(${state.ethenol}), label: "${state.state}"`)
-                let js_response = js_page
-                    .toString()
-                    .replace('%%replace_sector_data%%', format_sector_data)
-                    .replace('%%replace_total_data%%', format_total_data)
-                    .replace('%%replace_state_data%%', format_state_data)
-                js_res.status(200).type('js').send(js_response)
-            })
-            let response = page
-                .toString()
-                .replace('%%Title_Placeholder%%', 'Homepage');
-            res.status(200).type('html').send(response)  
-        })
+
+        let response = page
+            .toString()
+            .replace('%%Title_Placeholder%%', 'Homepage')
+            .replace('%%route%%', '/javascript/home')
+        res.status(200).type('html').send(response)
+
+    })
+})
+
+app.get('/javascript/home', (req, js_res) => {
+    let query_1 = `SELECT sector.sector_name, sum(total) as sum FROM AnnualSectorEnergy JOIN Sector WHERE 
+        Sector.sector_id=AnnualSectorEnergy.sector_id AND year=2021 GROUP BY Sector.sector_name`
+    let query_2 = `SELECT year, total_primary from AnnualEnergy`
+    let query_3 = `SELECT State, ethenol FROM StateEnergy2020 WHERE State != "United States"`
+    const promises = [
+        callDatabase(query_1, js_res),
+        callDatabase(query_2, js_res),
+        callDatabase(query_3, js_res),
+        readFile(path.join(js_dir, 'script.js'), js_res)
+    ]
+    Promise.all(promises).then(result => {
+        // Once at this level we have all database data and javascript template
+        let [sector, total, state, js_page] = result;
+
+        // console.log(page)
+        let format_sector_data = formatJavascriptData(sector, (sector) => ` y: ${sector.sum}, label: "${sector.sector_name}"`)
+        let format_total_data = formatJavascriptData(total, (total) => ` y: ${total.total_primary}, label: "${total.year}"`)
+        let format_state_data = formatJavascriptData(state, (state) => ` y: parseFloat(${state.ethenol}), label: "${state.state}"`)
+        let js_response = js_page
+            .toString()
+            .replace('%%replace_sector_data%%', format_sector_data)
+            .replace('%%replace_total_data%%', format_total_data)
+            .replace('%%replace_state_data%%', format_state_data)
+        js_res.status(200).type('js').send(js_response)
     })
 })
 
@@ -121,10 +130,13 @@ function formatJavascriptData(list, transform) {
 app.get('/:sector/annual/:year', (req, res) => {
     let sector = req.params.sector
     let year = req.params.year
+    globalQueryConstraints = []
+    globalQueryConstraints.push(sector)
+    globalQueryConstraints.push(year)
 
     createPageFromDynamicTemplate('sector.html', (page) => {
         // If there was an retrieval error -- redirect to 404 error page
-        if (page.toString().slice(0,5) == 'Error') {
+        if (page.toString().slice(0, 5) == 'Error') {
             display404Page(res)
             return
         }
@@ -133,46 +145,51 @@ app.get('/:sector/annual/:year', (req, res) => {
             .toString()
             .replace('%%Title_Placeholder%%', `${sector}:${year}`)
             .replace('%%Notes_Placeholder%%', Notes_String)
+            .replace('%%route%%', '/javascript/sector')
 
-        let query =
-            `SELECT hydro_electric, geothermal, solar, wind, wood, waste, ethenol, biomass, 
-            total FROM AnnualSectorEnergy join Sector on AnnualSectorEnergy.sector_id=
-            Sector.sector_id WHERE Sector.sector_name = ? AND AnnualSectorEnergy.year = ?`
+        // need to add other transportation queries to chart representation
+        // need to add images to dynamic sector pages
+        // need to figure out javascript file get error
+        // need to work on centering graph
 
-            // need to add other transportation queries to chart representation
-            // need to add images to dynamic sector pages
-            // need to figure out javascript file get error
-            // need to work on centering graph
-        db.all(query, [sector, year], (err, rows) => {
+        js_data_query =
+            `SELECT total, biomass, waste, ethenol, wood, hydro_electric, geothermal, solar, wind,  
+         biodiesel, renewable_diesel, other_biodiesel FROM AnnualSectorEnergy join Sector on AnnualSectorEnergy.sector_id=
+        Sector.sector_id WHERE Sector.sector_name = ? AND AnnualSectorEnergy.year = ?`
+
+        // console.log(rows[0])
+        res.status(200).type('html').send(response)
+    })
+
+})
+
+app.get('/javascript/sector', (req, js_res) => {
+    fs.readFile(path.join(js_dir, 'sector.js'), 'utf-8', (err, js_page) => {
+        if (err) {
+            display404Page(js_res)
+            return
+        }
+        db.all(js_data_query, globalQueryConstraints, (err, rows) => {
             if (err) {
-                display404Page(res)
+                console.log(err)
+                // display404Page(js_res)
                 return
             }
-            app.get('/javascript', (req, js_res) => {
-                fs.readFile(path.join(js_dir, 'sector.js'), 'utf-8', (err, js_page) => {
-                    if (err) {
-                        display404Page(res)
-                        return
-                    }
-                         let format_data = ``                        
-                         for (let data in rows[0]) {
-                            if (rows[0][data] == '') {
-                                rows[0][data] = 0
-                            }
-                            format_data += `{ y: ${rows[0][data]}, label: "${data.charAt(0).toUpperCase()+data.slice(1)}"},`
-                         } 
-                         let js_response = js_page
-                            .toString()
-                            .replace('%%Data_Placeholder%%', format_data.slice(0, -1))
-                            .replace('%%Sector%%', `${sector} Sector`)
-                            console.log(js_response)
-                        js_res.status(200).type('js').send(js_response)
-                    })
-                    
-                })
-                // console.log(rows[0])
-                res.status(200).type('html').send(response)
-            })
+            let format_data = ``
+            for (let data in rows[0]) {
+                if (rows[0][data] == '') {
+                    rows[0][data] = 0
+                }
+                format_data += `{ y: ${rows[0][data]}, label: "${data.charAt(0).toUpperCase() + data.slice(1)}"},`
+            }
+            let js_response = js_page
+                .toString()
+                .replace('%%Data_Placeholder%%', format_data.slice(0, -1))
+                .replace('%%Sector%%', `${globalQueryConstraints[0]} Sector`)
+            // console.log(js_response)
+            js_res.status(200).type('js').send(js_response)
+
+        })
 
     })
 })
@@ -187,7 +204,7 @@ app.get('/:sector/monthly/:month/:year', (req, res) => {
     fs.readFile(path.join(template_dir, 'sector.html'), 'utf-8', (err, template) => {
 
         populateNavigation(template, (response) => {
-            
+
             response = response.replace('%%Sector_Title:Date%%', `${sector}:${month}-${year}`)
             let query =
                 `SELECT * FROM MonthlySectorEnergy JOIN Sector ON MonthlySectorEnergy.sector_id=
@@ -215,7 +232,7 @@ app.get('/state/:state', (req, res) => {
         populateNavigation(template, (response) => {
             response = response.replace('%%State%%', `${state}`)
             // todo write query
-            let query ='SELECT State,Coal,Natural Gas excluding Supplemental Gaseous Fuels,Distillate \
+            let query = 'SELECT State,Coal,Natural Gas excluding Supplemental Gaseous Fuels,Distillate \
                     Fuel Oil excluding Biodiesel,HGL,Jet Fuel,Petroleum Motor Gasoline excluding Fuel Ethanol , \
                     Residual Fuel Oil,Other,total fossil,supplemental_gaseous_fuel,biodiesel,ethanol'
 
@@ -235,9 +252,9 @@ app.get('/state/:state', (req, res) => {
                 console.log("this is working as intended")
                 res.status(200).type('html').send(response)
             })
-        console.log("We are inside the file")
+            console.log("We are inside the file")
         })
-    console.log("We are outside of the file.")
+        console.log("We are outside of the file.")
     })
 })
 
@@ -255,7 +272,7 @@ app.get('/total_monthly/:month_id/:year', (req, res) => {
     let monthID = req.params.month
     let year = req.params.year
 
-    createPageFromDynamicTemplate('total_monthly.html', (page) => {        
+    createPageFromDynamicTemplate('total_monthly.html', (page) => {
         let query = `SELECT coal FROM MonthlyEnergy WHERE year = ?`
 
         db.all(query, [year], (err, rows) => {
@@ -285,7 +302,7 @@ let months = ['January', 'Feburary', 'March', 'April', 'May', 'June', 'July',
 function createPageFromDynamicTemplate(contentFileName, onContentInserted) {
     let contentPath = path.join(template_dir, contentFileName)
     let templatePath = path.join(template_dir, 'dynamic_route_template.html')
-    
+
     fs.readFile(contentPath, (err, content) => {
         if (err) {
             onContentInserted(err)
@@ -301,7 +318,7 @@ function createPageFromDynamicTemplate(contentFileName, onContentInserted) {
                 })
             }
         })
-    }) 
+    })
 }
 
 /* Builds the navigation path for all dynamic pages */
@@ -319,24 +336,24 @@ function populateNavigation(template, callback) {
             let sectorNames = query_2_rows.map((row) => row.sector_name)
 
             // Populate Client Navigation
-            let sectorMonthlyPlaceholder = 
-                createDoublyNestedListElements(sectorNames, months, years, (sn, m, y) => 
+            let sectorMonthlyPlaceholder =
+                createDoublyNestedListElements(sectorNames, months, years, (sn, m, y) =>
                     `<a href=/${sn}/monthly/${m}/${y}>${y}</a>`
                 )
-            let sectorAnnualPlaceholder = 
+            let sectorAnnualPlaceholder =
                 createNestedListElements(sectorNames, years, (sn, y) =>
                     `<a href="/${sn}/annual/${y}">${y}</a>`
                 )
-            let annualPlaceholder = 
-                createListElements(years, (y) => 
+            let annualPlaceholder =
+                createListElements(years, (y) =>
                     `<a href="/total/annual/${y}">${y}</a>`
                 )
-            let monthPlaceholder = 
-                createNestedListElements(months, years, (m, y) => 
+            let monthPlaceholder =
+                createNestedListElements(months, years, (m, y) =>
                     `<a href="/total_monthly/${m}/${y}">${y}</a>`
                 )
-            let statePlaceholder = 
-                createListElements(states, (s) => 
+            let statePlaceholder =
+                createListElements(states, (s) =>
                     `<a href="/state/${s}">${s}</a>`
                 )
 
@@ -360,7 +377,7 @@ function display404Page(res) {
             res.status(404).type('text').send('Please check your request and try again...')
             return
         }
-        res.status(404).type('html').send(template)            
+        res.status(404).type('html').send(template)
     })
 }
 
@@ -419,7 +436,7 @@ app.get('/year/:selected_year', (req, res) => {
     fs.readFile(path.join(template_dir, 'year.html'), (err, template) => {
         // modify `template` and send response
         // this will require a query to the SQL database
-
+ 
         res.status(200).type('html').send(template); // <-- you may need to change this
     });
 });
