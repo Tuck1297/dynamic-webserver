@@ -1,4 +1,3 @@
-<!-- TODO: make sure error works when inputting information that isn't in the database. -->
 <!DOCTYPE html>
 <html lang="en">
 
@@ -9,55 +8,6 @@
     <link rel="icon" href="">
     <link rel="stylesheet" href="/css/foundation.css">
     <title>%%State%%</title>
-    <script>
-        window.onload = function () {
-            
-        var chart = new CanvasJS.Chart("chartContainer", {
-            animationEnabled: true,
-            
-            title:{
-                text:"%%State%%"
-            },
-            axisX:{
-                interval: 1
-            },
-            axisY2:{
-                interlacedColor: "rgba(1,77,101,.2)",
-                gridColor: "rgba(1,77,101,.1)",
-                title: "%%Units%%"
-            },
-            data: [{
-                type: "bar",
-                name: "%%Type of Gas Used%%",
-                axisYType: "secondary",
-                color: "#014D65",
-                dataPoints: [
-                    // { y: %%data%%, label: "%%Type of Gas%%"},
-                    { y: 3, label: "Sweden" },
-                    { y: 7, label: "Taiwan" },
-                    { y: 5, label: "Russia" },
-                    { y: 9, label: "Spain" },
-                    { y: 7, label: "Brazil" },
-                    { y: 7, label: "India" },
-                    { y: 9, label: "Italy" },
-                    { y: 8, label: "Australia" },
-                    { y: 11, label: "Canada" },
-                    { y: 15, label: "South Korea" },
-                    { y: 12, label: "Netherlands" },
-                    { y: 15, label: "Switzerland" },
-                    { y: 25, label: "Britain" },
-                    { y: 28, label: "Germany" },
-                    { y: 29, label: "France" },
-                    { y: 52, label: "Japan" },
-                    { y: 103, label: "China" },
-                    { y: 134, label: "US" }
-                ]
-            }]
-        });
-        chart.render();
-        
-        }
-    </script>
 </head>
 
 <body
@@ -110,24 +60,12 @@
             </button>
         </div>
     </div>
-    
+
     <!-- This is where all the non-navigation bar information resides. -->
-    <div class="off-canvas-content">
-        <div class="grid-x grid-padding-x">
-            <!-- Buffer for large and medium web pages -->
-            <div class="large-2 medium-1 small-0 cell"></div>
-            <div class="large-8 medium-10 small-12 center-content">
-                <!-- Graph -->
-                <div id="chartContainer" style="height: 370px; max-width: 920px; margin: 0px auto;"></div>
-                <!-- Data -->
-                <tr>
-                    <db></db>
-                </tr>
-                some content
-            </div>
-            <div class="large-2 medium-1 small-0 cell"></div>
-        </div>
-    </div>
+    <!-- Next and Previous buttons -->
+    <a class="prev" onclick="nextData(-1)">&#10094;</a>
+    <a class="next" onclick="nextData(1)">&#10095;</a>
+    %%Placeholder_Content%%
 
     <script src="/js/script.js"></script>
     <script src="/js/jquery.js"></script>
@@ -137,9 +75,6 @@
         $(document).foundation();
     </script>
     <script src="/js/app.js"></script>
-    <!-- Graph Script -->
-    <script src="/js/canvasjs.min.js"></script>
-    <!-- <script src="../../canvasjs.min.js"></script> -->
 </body>
 
 </html>

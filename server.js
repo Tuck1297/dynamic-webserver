@@ -10,7 +10,7 @@ let sqlite3 = require('sqlite3');
 let public_dir = path.join(__dirname, 'public');
 let template_dir = path.join(__dirname, 'templates');
 let db_filename = path.join(__dirname, 'db', 'Energy.sqlite3');
-let js_dir = path.join(__dirname, 'js');
+let js_dir = path.join(__dirname, 'public/js');
 
 let app = express();
 let port = 8000;
@@ -55,9 +55,6 @@ app.get('/homepage', (req, res) => {
         }
         // Callback to navigation population function
         populateNavigation(template, (response) => {
-<<<<<<< Updated upstream
-            // remainder of page set up unique to sector, state, or total goes here
-=======
             // Get request for javascript graph template
             app.get('/javascript', (req, res) => {
                 // add error code if js file does not load
@@ -75,11 +72,18 @@ app.get('/homepage', (req, res) => {
                     })
                 })
             })
->>>>>>> Stashed changes
+
             res.status(200).type('html').send(response)
         })
     })
 })
+
+/* Wraps all data from list in {}, and returns all concatenated together */
+function formatJavascriptData(list, transform) {
+    return list
+        .map((element) => `{${transform(element)}},`)
+        .join('')
+}
 
 // Dynamic path for Sector Annual Data
 
@@ -137,15 +141,14 @@ app.get('/:sector/monthly/:month/:year', (req, res) => {
 
 app.get('/state/:state', (req, res) => {
     let state = req.params.state
+
     // todo add html template
     fs.readFile(path.join(template_dir, 'state.html'), 'utf-8', (err, template) => {
 
         populateNavigation(template, (response) => {
             response = response.replace('%%State%%', `${state}`)
             // todo write query
-<<<<<<< Updated upstream
-            let query =
-                ``
+            let query = ``
 
             db.all(query, [], (err, rows) => {
                 // todo replace placeholders
@@ -153,178 +156,216 @@ app.get('/state/:state', (req, res) => {
                 res.status(200).type('html').send(response)
             })
         })
-
-=======
-            let query ='SELECT state, coal, natural_gas, \
-                    distillate_fuel, hgl, jet_fuel, \
-                    petroleum_gasoline, residual_fuel, other, \
-                    total_fossil_fuel, supplemental_gaseous_fuel, \
-                    biodiesel, ethenol from StateEnergy2020'
+        createPageFromDynamicTemplate('state.html', (page) => {
+            let query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
             db.all(query, [state], (err, rows) => {
-                // todo replace placeholders
-                let response2 = template.toString()
-                // response = response.replace('%%CEREAL_INFO%%', rows[1].cereal);
+                let response = page.toString()
                 let data = '';
-                console.log(rows)
-                // for(let i = 0; i < rows.length; i++){
-                //     data = data + '<tr>'
-                //     data = data + '<tb>' + rows[i].state + rows[i].coal + '</tb>'
-                //     data = data + '<td>' + rows[i].state + '<td>'
-                //     data = data + '<tr>'
+                // for(let i of rows){
+                //     data = data + 
+                //     response.replace("%%Placeholder_Content%%", data)
                 // }
-                response2 = response2.replace('%%INFO%%', data)
-                res.status(200).type('html').send(response2)
+                console.log(rows)
+                console.log("this is working as intended")
+                res.status(200).type('html').send(response)
             })
+            console.log("This is a test")
         })
->>>>>>> Stashed changes
     })
 })
 
 // Dynamic path for Total Annual Data
-
-app.get('/total/annual/:year', (req, res) => {
+app.get('/total_annual/:year', (req, res) => {
     let year = req.params.year
 
-    // todo add html template
-    fs.readFile(path.join(template_dir, 'date.html'), 'utf-8', (err, template) => {
-
-        populateNavigation(template, (response) => {
-            response = response.replace('%%Total:Date%%', `Total:${year}`)
-            // todo write query
-            let query =
-                ``
-
-            db.all(query, [], (err, rows) => {
-                // todo replace placeholders
-
-                res.status(200).type('html').send(response)
-            })
-
-        })
-
+    createPageFromDynamicTemplate('total_annual.html', (page) => {
+        res.status(200).type('html').send(page)
     })
 })
 
 // Dynamic path for Total Monthly Data
-
-app.get('/total/monthly/:month_id/:year', (req, res) => {
-    let monthID = req.params.month_id
+app.get('/total_monthly/:month_id/:year', (req, res) => {
+    let monthID = req.params.month
     let year = req.params.year
 
-    // todo add html template
-    fs.readFile(path.join(template_dir, 'date.html'), 'utf-8', (err, template) => {
+    createPageFromDynamicTemplate('total_monthly.html', (page) => {        
+        let query = `SELECT coal FROM MonthlyEnergy WHERE year = ?`
 
-        populateNavigation(template, (response) => {
-            response = response.replace('%%Total:Date%%', `Total:${monthID}-${year}`)
-            // todo write query
-            let query =
-                ``
+        db.all(query, [year], (err, rows) => {
+            let coalConsumption = rows.map((row) => row.coal)
+            let finalPage = page.replace('%%Placeholder_Test%%', coalConsumption)
 
-            db.all(query, [], (err, rows) => {
-                // todo replace placeholders
-
-                res.status(200).type('html').send(response)
-            })
+            res.status(200).type('html').send(finalPage)
         })
-
     })
 })
 
-function populateNavigation(template, callback) {
-    let query = 'SELECT Year FROM AnnualSectorEnergy WHERE sector_id=1;'
-    db.all(query, [], (err, rows) => {
-        // If database error occurs
+//Dynamic path for specified State Data 
+// app.get('/state/:state', (req, res) => {
+//     let state = req.params.state
+//     createPageFromDynamicTemplate('state.html', (page) => {
+//         let query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
+//         db.all(query, [state], (err, rows) => {
+//             let response = page.toString()
+//             let data = '';
+//             // for(let i of rows){
+//             //     data = data + 
+//             //     response.replace("%%Placeholder_Content%%", data)
+//             // }
+//             console.log(rows)
+//             console.log("this is working as intended")
+//             res.status(200).type('html').send(response)
+//         })
+//         console.log("This is a test")
+//     })
+// })
+
+//TODO lines 296-380. Use a For-Each Loop & wrapping with elements.
+//
+
+let states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
+    , 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii'
+    , 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana'
+    , 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi'
+    , 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey'
+    , 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma'
+    , 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota'
+    , 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington'
+    , 'West Virginia', 'Wisconsin', 'Wyoming']
+
+let months = ['January', 'Feburary', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December']
+
+function createPageFromDynamicTemplate(contentFileName, onContentInserted) {
+    let contentPath = path.join(template_dir, contentFileName)
+    let templatePath = path.join(template_dir, 'dynamic_route_template.html')
+    
+    fs.readFile(contentPath, (err, content) => {
         if (err) {
-            // Retrieve error client notice template
-            fs.readFile(path.join(template_dir, 'file_not_found.html'), (err, template) => {
-                if (err) {
-                    // In case client notice template cannot be accessed
-                    res.status(404).type('text').send('Please check your request and try again...')
-                }
-                res.status(404).type('html').send(template)
-                return
-            })
-            res.status(404).type('html').send(template)
-            return
+            onContentInserted(err)
         }
-        query = 'SELECT sector_name FROM Sector;'
-        db.all(query, [], (err, rows_2) => {
-            // Populate Client Navigation
-            // Navigation for Sector Annual and Monthly
-            let response = template.toString()
-            let ul_head_tag = `<ul class="menu" style="max-height: 300px; overflow-y:scroll;">`
-            let ul_li_end_tag = `</ul></li> <div class="sidebar_buffer"></div>`
 
-            let months_array = ['January', 'Feburary', 'March', 'April', 'May', 'June', 'July',
-                'August', 'September', 'October', 'November', 'December']
-            let total_years = ""
-            let sector_years = ""
-            let total_months = ""
-            let sector_months = ""
-            // Add navigation links for Annual Total, Annual Sector and Monthly Sector
-            for (let i = 0; i < rows_2.length; i++) {
-                sector_years = sector_years + `<li><a>${rows_2[i].sector_name}</a>` + ul_head_tag
-                sector_months = sector_months + `<li><a>${rows_2[i].sector_name}</a>` + ul_head_tag
-                // Populate Monthly Sector
-                for (let j = 0; j < 12; j++) {
-                    let li_head_tag = `<li><a>${months_array[j]}</a>`
-                    sector_months = sector_months + li_head_tag + ul_head_tag
-                    // Populate Years in Montly Sector
-                    for (let x = 0; x < rows.length; x++) {
-                        sector_months = sector_months + `<li><a href="/sector/monthly/${months_array[i]}/${rows[x].year}" \
-                        target="_self">${rows[x].year}</a></li>`
-                    }
-                    sector_months = sector_months + ul_li_end_tag
-                }
-                // Populate Years in Annual Sector and Annual Total
-                for (let x = 0; x < rows.length; x++) {
-                    // Add navigation links for Annual Sector
-                    sector_years = sector_years + `<li><a href="/${rows_2[i].sector_name}/annual/${rows[x].year}" \
-                    target="_self">${rows[x].year}</a></li>`
-                    // Add navigation links for Annual Total
-                    total_years = total_years + `<li><a href="/total/annual/${rows[x].year}" \
-                    target="_self">${rows[x].year}</a></li>`
-                }
-                sector_years = sector_years + ul_li_end_tag
-                sector_months = sector_months + ul_li_end_tag
+        fs.readFile(templatePath, 'utf-8', (err, template) => {
+            if (err) {
+                onContentInserted(err)
+            } else {
+                populateNavigation(template, (navigationTemplate) => {
+                    let page = navigationTemplate.replace('%%Placeholder_Content%%', content)
+                    onContentInserted(page)
+                })
             }
-            // Add navigation links for Monthly Total
-            for (let i = 0; i < 12; i++) {
-                let li_head_tag = `<li><a>${months_array[i]}</a>`
-                total_months = total_months + li_head_tag + ul_head_tag
-                for (let x = 0; x < rows.length; x++) {
-                    total_months = total_months + `<li><a href="/total/monthly/${months_array[i]}/${rows[x].year}" \
-                    target="_self">${rows[x].year}</a></li>`
-                }
-                total_months = total_months + ul_li_end_tag
-            }
-
-            // Add navigation links for State
-            let states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
-                , 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii'
-                , 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana'
-                , 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi'
-                , 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey'
-                , 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma'
-                , 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota'
-                , 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington'
-                , 'West Virginia', 'Wisconsin', 'Wyoming']
-            let statePlaceholder = createHtmlListElements(states, (state) => `<a href="/state/${state}">${state}</a>`)
-        
-            response = response.replace('%%List_Placeholder_Total_Year%%', total_years)
-            response = response.replace('%%List_Placeholder_Sector_Annual%%', sector_years)
-            response = response.replace('%%List_Placeholder_Total_Month%%', total_months)
-            response = response.replace('%%List_Placeholder_Sector_Monthly%%', sector_months)
-            response = response.replace('%%List_Placeholder_State%%', statePlaceholder)
-            callback(response)
         })
-
-    })
-
+    }) 
 }
 
-//GET request handler for State data
-// app.get()
+/* Builds the navigation path for all dynamic pages */
+function populateNavigation(template, callback) {
+    let query1 = `SELECT year FROM AnnualSectorEnergy WHERE sector_id=1;`
+    let query2 = `SELECT sector_name FROM Sector;`
+
+    db.all(query1, [], (dbError, query_1_rows) => {
+        if (dbError) {
+            display404Page()
+            return
+        }
+        db.all(query2, [], (err, query_2_rows) => {
+            let years = query_1_rows.map((row) => row.year)
+            let sectorNames = query_2_rows.map((row) => row.sector_name)
+
+            // Populate Client Navigation
+            let sectorMonthlyPlaceholder = 
+                createDoublyNestedListElements(sectorNames, months, years, (sn, m, y) => 
+                    `<a href=/${sn}/monthly/${m}/${y}>${y}</a>`
+                )
+            let sectorAnnualPlaceholder = 
+                createNestedListElements(sectorNames, years, (sn, y) =>
+                    `<a href="/${sn}/annual/${y}">${y}</a>`
+                )
+            let annualPlaceholder = 
+                createListElements(years, (y) => 
+                    `<a href="/total/annual/${y}">${y}</a>`
+                )
+            let monthPlaceholder = 
+                createNestedListElements(months, years, (m, y) => 
+                    `<a href="/total_monthly/${m}/${y}">${y}</a>`
+                )
+            let statePlaceholder = 
+                createListElements(states, (s) => 
+                    `<a href="/state/${s}">${s}</a>`
+                )
+
+            // Replace string placeholders
+            let response = template
+                .toString()
+                .replace('%%List_Placeholder_Total_Year%%', annualPlaceholder)
+                .replace('%%List_Placeholder_Sector_Annual%%', sectorAnnualPlaceholder)
+                .replace('%%List_Placeholder_Total_Month%%', monthPlaceholder)
+                .replace('%%List_Placeholder_Sector_Monthly%%', sectorMonthlyPlaceholder)
+                .replace('%%List_Placeholder_State%%', statePlaceholder)
+
+            callback(response)
+        })
+    })
+}
+
+function display404Page(res) {
+    fs.readFile(path.join(template_dir, 'file_not_found.html'), (err, template) => {
+        if (err) {
+            res.status(404).type('text').send('Please check your request and try again...')
+            return
+        }
+        res.status(404).type('html').send(template)            
+    })
+}
+
+function createDoublyNestedListElements(grandparentList, parentList, childList, childTransform) {
+    let elements = []
+
+    for (let g of grandparentList) {
+        elements.push(`<li> <a>${g}</a> <ul class="menu navParent">`)
+
+        for (let p of parentList) {
+            elements.push(`<li> <a>${p}</a> <ul class="menu navParent">`)
+
+            for (let c of childList) {
+                elements.push(createListElement(childTransform(g, p, c)))
+            }
+            elements.push(`</ul></li>`)
+        }
+        elements.push(`</ul><div class="sidebar_buffer"></div></li>`)
+    }
+
+    return elements.join('')
+}
+
+function createNestedListElements(parentList, childList, childTransform) {
+    let elements = []
+
+    for (let p of parentList) {
+        elements.push(`<li><a>${p}</a> <ul class="menu navParent">`)
+
+        for (let c of childList) {
+            elements.push(createListElement(childTransform(p, c)))
+        }
+        elements.push(`</ul><div class="sidebar_buffer"></div></li>`)
+    }
+    return elements.join('')
+}
+
+/* Wraps <li> tags around all input list elements and returns all concatnated together */
+function createListElements(list, transform) {
+    return list
+        .map(transform)
+        .map(createListElement)
+        .join('')
+}
+
+function createListElement(content) {
+    return `<li>${content}</li>`
+}
+
+
+
 /*
 // Example GET request handler for data about a specific year
 app.get('/year/:selected_year', (req, res) => {
@@ -342,8 +383,25 @@ app.listen(port, () => {
     console.log('Now listening on port ' + port);
 });
 
-function createHtmlListElements(list, transform) {
-    return list
-        .map((element) => `<li>${transform(element)}</li>`)
-        .join('')
-}
+// //TODO: Specify where dataIndex comes from
+// let dataIndex = 1;
+// showCurrentData(dataIndex)
+
+// // Next/previous controls
+// function nextData(n) {
+//     showCurrentData(dataIndex += n)
+// }
+
+// Should update the page with data from the database
+// TODO: Should grab data from database
+// function showCurrentData(n) {
+//   let i;
+//   let data = document.getElementsByClassName("data");
+//   if (n > data.length) {dataIndex = 1}
+//   if (n < 1) {dataIndex = data.length}
+//   for (i = 0; i < data.length; i++) {
+//     data[i].style.display = "none"
+//   }
+//   data[dataIndex-1].style.display = "block"
+// }
+
