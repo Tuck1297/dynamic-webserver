@@ -140,3 +140,6 @@ background-color: rgba(0,0,0,0.8);
     max-height: 300px; 
     overflow-y: scroll;
 }
+td {
+    text-align: center;
+}

@@ -207,19 +207,61 @@ app.get('/:sector/monthly/:month/:year', (req, res) => {
 // Dynamic path for State Data
 
 app.get('/state/:state', (req, res) => {
-    let state = req.params.state
+    let state = req.params.state 
+    //add Javascript to head
+    let graphData = ''
+    let data = ''
+    //creating headers
+    data = data + '<tr>'
+    data = data + '<th>State</th>'
+    data = data + '<th>Coal</th>'
+    data = data + '<th>Natural Gas</th>'
+    data = data + '<th>Distillate Fuel</th>'
+    data = data + '<th>HGL</th>'
+    data = data + '<th>Jet Fuel</th>'
+    data = data + '<th>Petroleum Gasoline</th>'
+    data = data + '<th>Residual Fuel</th>'
+    data = data + '<th>Other</th>'
+    data = data + '<th>Total Fossil Fuel</th>'
+    data = data + '<th>Supplemental Gaseous Fuel</th>'
+    data = data + '<th>Biodiesel</th>'
+    data = data + '<th>Ethenol</th>'
+    data = data + '</tr>'
     createPageFromDynamicTemplate('state.html', (page) => {
         let query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
         db.all(query, [state], (err, rows) => {
-            let data = '';
-            // for(let i of rows){
-            //     data = data + 
-            //     response.replace("%%Placeholder_Content%%", data)
-            // }
-            
-            // console.log(rows.at(1))
-            // console.log("this is working as intended")
-            res.status(200).type('html').send(page)
+            //Initializing
+            let state = rows.map((row) => row.state)
+            let coal = rows.map((row) => row.coal)
+            let naturalGas = rows.map((row) => row.natural_gas)
+            let distillateFuel = rows.map((row) => row.distillate_fuel)
+            let hgl = rows.map((row) => row.hgl)
+            let jetFuel = rows.map((row) => row.jet_fuel)
+            let petroleumGasoline = rows.map((row) => row.petroleum_gasoline)
+            let residualFuel = rows.map((row) => row.residual_fuel)
+            let other = rows.map((row) => row.other)
+            let totalFossilFuel = rows.map((row) => row.total_fossil_fuel)
+            let supplementalGaseousFuel = rows.map((row) => row.supplemental_gaseous_fuel)
+            let biodiesel = rows.map((row) => row.biodiesel)
+            let ethenol = rows.map((row) => row.ethenol)
+            //creating row
+            data = data + '<tr>'
+                data = data + '<td>' + state + '</td>' 
+                data = data + '<td>' + coal + '</td>' 
+                data = data + '<td>' + naturalGas + '</td>' 
+                data = data + '<td>' + distillateFuel + '</td>'
+                data = data + '<td>' + hgl + '</td>'
+                data = data + '<td>' + jetFuel + '</td>'
+                data = data + '<td>' + petroleumGasoline + '</td>'
+                data = data + '<td>' + residualFuel + '</td>'
+                data = data + '<td>' + other + '</td>'
+                data = data + '<td>' + totalFossilFuel + '</td>'
+                data = data + '<td>' + supplementalGaseousFuel + '</td>'
+                data = data + '<td>' + biodiesel + '</td>'
+                data = data + '<td>' + ethenol + '</td>'
+            data = data + '</tr>'
+            let finalPage = page.replace('%%Placeholder_Content%%', data)
+            res.status(200).type('html').send(finalPage)
         })
     })
 })
@@ -410,83 +452,4 @@ app.get('/year/:selected_year', (req, res) => {
 
 app.listen(port, () => {
     console.log('Now listening on port ' + port);
-});
-
-// let dataIndex = findIndex()
-
-// function findIndex(){
-//     //pop off last parameter of URL
-//     let lastSegmentOfURL = location.pathname.split('/').pop()
-//     let states = `SELECT state FROM StateEnergy2020`
-//     let yearList = `SELECT Year FROM AnnualEnergy`
-//     let data
-//     if(states.includes(lastSegmentOfURL)){
-//         data = states.indexOf(lastSegmentOfURL)
-//     } else {
-//         data = yearList.indexOf(lastSegmentOfURL)
-//     }
-//     return data + 2
-    
-// }
-//     // Next/previous controls
-// function nextData(n) {
-//     showCurrentData(dataIndex += n)
-// }
-
-// // Should update the page with data from the database
-// // TODO: Should change URL
-// function showCurrentData(dataIndex, n) {
-//     //redirect page depending on URL
-//     let currentURL = window.location.href
-//     console.log(currentURL)
-//     let newPage  
-//     let states = `SELECT state FROM StateEnergy2020`
-//     let yearList = `SELECT Year FROM AnnualEnergy`
-//     let dataSet
-//     if(yearList.includes(location.pathname.split('/').pop()))
-//     {
-//         dataSet = yearList
-//         console.log("we are entering yearList")
-//     } else {
-//         dataSet = states
-//         console.log("we are entering states")
-//     }
-//     console.log(dataIndex)
-//     console.log(dataSet)
-//     console.log(dataSet.length)
-//     if (n > dataSet.length) {dataIndex = 1}
-//     if (n < 1) {dataIndex = dataSet.length}
-//     //USA Consumption by Sector Annually
-//     if(/Residential/.test(window.location.href && /annual/.test(window.location.href))){
-//         newPage = (dataIndex, (err, data) => {
-//             data = dataSet.at(dataIndex)
-//         })
-//     }
-//     //USA Consumption by Sector Monthly
-//     if(/Residential/.test(window.location.href && /monthly/.test(window.location.href))){
-//         newParameter = changeParameter(dataIndex, dataSet)
-//     }
-//     //USA Consumption by State
-//     if(/state/.test(window.location.href)){
-//         console.log('we are entering states')
-//         newParameter = changeParameter(dataIndex, dataSet)
-//         console.log("this is the new parameter " + newParameter)
-//     }
-//     //USA Consumption by Year
-//     if(/total/.test(window.location.href)&& /annual/.test(window.location.href)){
-//         newParameter = changeParameter(dataIndex, dataSet)
-//     }
-//     //USA Consumption by Month
-//     if(/total_monthly/.test(window.location.href)){
-//         newParameter = changeParameter(dataIndex, dataSet)
-//     }
-//     // location.assign(currentURL.replace(/\/[^\/]*$/, newPage))
-// }
-
-// function changeParameter(dataIndex, dataSet){
-//     console.log("this is the dataSet " + dataSet)
-//     console.log("This is the dataIndex " + dataIndex)
-//     let data = dataSet.at(dataIndex)
-//     console.log("This is the data " + data)
-// }
-
+})
