@@ -246,25 +246,31 @@ app.get('/state/:state', (req, res) => {
             let ethenol = rows.map((row) => row.ethenol)
             //creating row
             data = data + '<tr>'
-                data = data + '<td>' + state + '</td>' 
-                data = data + '<td>' + coal + '</td>' 
-                data = data + '<td>' + naturalGas + '</td>' 
-                data = data + '<td>' + distillateFuel + '</td>'
-                data = data + '<td>' + hgl + '</td>'
-                data = data + '<td>' + jetFuel + '</td>'
-                data = data + '<td>' + petroleumGasoline + '</td>'
-                data = data + '<td>' + residualFuel + '</td>'
-                data = data + '<td>' + other + '</td>'
-                data = data + '<td>' + totalFossilFuel + '</td>'
-                data = data + '<td>' + supplementalGaseousFuel + '</td>'
-                data = data + '<td>' + biodiesel + '</td>'
-                data = data + '<td>' + ethenol + '</td>'
+            data = data + '<td>' + state + '</td>' 
+            data = data + '<td>' + coal + '</td>' 
+            data = data + '<td>' + naturalGas + '</td>' 
+            data = data + '<td>' + distillateFuel + '</td>'
+            data = data + '<td>' + hgl + '</td>'
+            data = data + '<td>' + jetFuel + '</td>'
+            data = data + '<td>' + petroleumGasoline + '</td>'
+            data = data + '<td>' + residualFuel + '</td>'
+            data = data + '<td>' + other + '</td>'
+            data = data + '<td>' + totalFossilFuel + '</td>'
+            data = data + '<td>' + supplementalGaseousFuel + '</td>'
+            data = data + '<td>' + biodiesel + '</td>'
+            data = data + '<td>' + ethenol + '</td>'
             data = data + '</tr>'
             let finalPage = page.replace('%%Placeholder_Content%%', data)
             res.status(200).type('html').send(finalPage)
         })
     })
+    // TODO MAKE GRAPH
+    // globalQueryConstaints = []
+    // globalQueryconstaints.push(state)
+    // js_data_query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
 })
+
+
 
 // Dynamic path for Total Annual Data
 app.get('/total_annual/:year', (req, res) => {
