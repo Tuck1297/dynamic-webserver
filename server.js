@@ -71,9 +71,6 @@ function callDatabase(query, res) {
 
 // Dynamic File path for homepage --> index.html
 app.get('/homepage', (req, res) => {
-
-
-
     createPageFromDynamicTemplate('index.html', (page) => {
         // If there was an retrieval error -- redirect to 404 error page
         if (page.toString().slice(0, 5) == 'Error') {
@@ -136,7 +133,7 @@ app.get('/:sector/annual/:year', (req, res) => {
     globalQueryConstraints.push(year)
     js_data_query =
         `SELECT total, biomass, waste, ethenol, wood, hydro_electric, geothermal, solar, wind,  
-         biodiesel, renewable_diesel, other_biodiesel FROM AnnualSectorEnergy join Sector on AnnualSectorEnergy.sector_id=
+        biodiesel, renewable_diesel, other_biodiesel FROM AnnualSectorEnergy join Sector on AnnualSectorEnergy.sector_id=
         Sector.sector_id WHERE Sector.sector_name = ? AND AnnualSectorEnergy.year = ?`
     createPageFromDynamicTemplate('sector.html', (page) => {
         // If there was an retrieval error -- redirect to 404 error page
@@ -167,19 +164,10 @@ app.get('/:sector/annual/:year', (req, res) => {
                 .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
                 .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
                 .replace('%%Sector_Type%%', `${sector}`)
-                // console.log(response)
+            // console.log(response)
             res.status(200).type('html').send(response)
         })
-
-        // need to add images to dynamic sector pages
-        // need to work on centering graph
-
-
-
-        // console.log(rows[0])
-
     })
-
 })
 
 app.get('/javascript/sector', (req, js_res) => {
@@ -188,28 +176,35 @@ app.get('/javascript/sector', (req, js_res) => {
             js_res.status(404).type('js').send(`Error: ${err}`)
             return
         }
+
         db.all(js_data_query, globalQueryConstraints, (err, rows) => {
             if (err) {
                 js_res.status(404).type('js').send(`Error: ${err}`)
                 return
             }
             let format_data = ``
+            let format_data_2 = ``
             for (let data in rows[0]) {
+                let label_name = data.charAt(0).toUpperCase() + data.slice(1)
                 if (rows[0][data] != '') {
+                    if (label_name !== 'Biomass' & label_name !== 'Total') {
+                        format_data_2 += `{ y: ${rows[0][data]}, label: "${label_name}"},`
+                    }
                     // rows[0][data] = 0
-                    format_data += `{ y: ${rows[0][data]}, label: "${data.charAt(0).toUpperCase() + data.slice(1)}"},`
+                    format_data += `{ y: ${rows[0][data]}, label: "${label_name}"},`
                 }
 
             }
             let js_response = js_page
                 .toString()
                 .replace('%%Data_Placeholder%%', format_data.slice(0, -1))
+                .replace('%%Data_Placeholder_2%%', format_data_2.slice(0, -1))
                 .replace('%%Sector%%', `${globalQueryConstraints[0]} Sector`)
                 .replace('%%total_Placeholder%%', rows[0].total + 100)
             // console.log(js_response)
             js_res.status(200).type('js').send(js_response)
-
         })
+// create table that displays data
 
     })
 })

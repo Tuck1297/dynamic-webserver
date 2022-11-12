@@ -1,9 +1,5 @@
 let graph_data = [%%Data_Placeholder%%]
-
-// let solar_data = [%%Solar_Data_Placeholder%%]
-// let wind_data = [%%Wind_Data_Placeholder%%]
-// let hydro_data = [%%Hydro_Data_Placeholder%%]
-// let bio_data = [%%Bio_Data_Placeholder%%]
+let type_data = [%%Data_Placeholder_2%%]
 
 var chart = new CanvasJS.Chart("chartContainer", {
     animationEnabled: true,
@@ -33,13 +29,13 @@ var chart = new CanvasJS.Chart("chartContainer", {
 });
 chart.render();
 
-var solar = new CanvasJS.Chart("solar", {
+var pie = new CanvasJS.Chart("pie", {
 	theme: "light2",
 	animationEnabled: true,
-	exportFileName: "Solar Energy Consumption 1949-2021",
+	exportFileName: "Sector Energy Consumed",
 	exportEnabled: true,
 	title:{
-		text: "Solar Energy Consumption 1949-2021"
+		text: "Consumption by Energy Type"
 	},
 	data: [{
 		type: "pie",
@@ -47,65 +43,7 @@ var solar = new CanvasJS.Chart("solar", {
 		legendText: "{label}",
 		toolTipContent: "{label}: <strong>{y}</strong> Trillion (BTU)",
 		indexLabel: "{label} {y}",
-		dataPoints : graph_data
+		dataPoints : type_data
 	}]
 });
- 
-solar.render();
-var wind = new CanvasJS.Chart("wind", {
-	theme: "light2",
-	animationEnabled: true,
-	exportFileName: "Wind Energy Consumption 1949-2021",
-	exportEnabled: true,
-	title:{
-		text: "Wind Energy Consumption 1949-2021"
-	},
-	data: [{
-		type: "pie",
-		showInLegend: false,
-		legendText: "{label}",
-		toolTipContent: "{label}: <strong>{y}</strong> Trillion (BTU)",
-		indexLabel: "{label} {y}",
-		dataPoints : graph_data
-	}]
-});
- 
-wind.render();
-var hydro = new CanvasJS.Chart("hydro", {
-	theme: "light2",
-	animationEnabled: true,
-	exportFileName: "Hydro Energy Consumption 1949-2021",
-	exportEnabled: true,
-	title:{
-		text: "Hydro Energy Consumption 1949-2021"
-	},
-	data: [{
-		type: "pie",
-		showInLegend: false,
-		legendText: "{label}",
-		toolTipContent: "{label}: <strong>{y}</strong> Trillion (BTU)",
-		indexLabel: "{label} {y}",
-		dataPoints : graph_data
-	}]
-});
- 
-hydro.render();
-var bio = new CanvasJS.Chart("bio", {
-	theme: "light2",
-	animationEnabled: true,
-	exportFileName: "Biofuel Consumption 1949-2021",
-	exportEnabled: true,
-	title:{
-		text: "Biofuel Consumption 1949-2021"
-	},
-	data: [{
-		type: "pie",
-		showInLegend: false,
-		legendText: "{label}",
-		toolTipContent: "{label}: <strong>{y}</strong> Trillion (BTU)",
-		indexLabel: "{label} {y}",
-		dataPoints : graph_data
-	}]
-});
- 
-bio.render();
+pie.render();
