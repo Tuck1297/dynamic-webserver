@@ -200,26 +200,6 @@ app.get('/total_monthly/:month_id/:year', (req, res) => {
     })
 })
 
-//Dynamic path for specified State Data 
-// app.get('/state/:state', (req, res) => {
-//     let state = req.params.state
-//     createPageFromDynamicTemplate('state.html', (page) => {
-//         let query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
-//         db.all(query, [state], (err, rows) => {
-//             let response = page.toString()
-//             let data = '';
-//             // for(let i of rows){
-//             //     data = data + 
-//             //     response.replace("%%Placeholder_Content%%", data)
-//             // }
-//             console.log(rows)
-//             console.log("this is working as intended")
-//             res.status(200).type('html').send(response)
-//         })
-//         console.log("This is a test")
-//     })
-// })
-
 //TODO lines 296-380. Use a For-Each Loop & wrapping with elements.
 //
 
