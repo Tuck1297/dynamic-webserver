@@ -103,19 +103,12 @@ p {
     }
 }
 
-.total-general-graph {
-    /* background-color: blue; */
+.home_graph_format {
     height: 500px;
 }
 
-.state-general-graph {
-    /* background-color: red;  */
-    height: 500px;
-}
-
-.sector-general-graph {
-    /* background-color: yellow; */
-    height: 500px;
+.sector_graph_format {
+    height: 400px
 }
 
 .prev, .next{

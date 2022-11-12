@@ -98,3 +98,5 @@ https://www.flickr.com/photos/nrel/36524417745
 
 Electric
 -- Reuse some from other areas --
+
+https://stackoverflow.com/questions/53832288/how-do-i-wait-for-multiple-fs-readfile-calls
