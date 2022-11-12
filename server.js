@@ -133,32 +133,50 @@ app.get('/:sector/annual/:year', (req, res) => {
     globalQueryConstraints = []
     globalQueryConstraints.push(sector)
     globalQueryConstraints.push(year)
-
+    js_data_query =
+        `SELECT total, biomass, waste, ethenol, wood, hydro_electric, geothermal, solar, wind,  
+         biodiesel, renewable_diesel, other_biodiesel FROM AnnualSectorEnergy join Sector on AnnualSectorEnergy.sector_id=
+        Sector.sector_id WHERE Sector.sector_name = ? AND AnnualSectorEnergy.year = ?`
     createPageFromDynamicTemplate('sector.html', (page) => {
         // If there was an retrieval error -- redirect to 404 error page
         if (page.toString().slice(0, 5) == 'Error') {
             display404Page(res)
             return
         }
-        let Notes_String = "NOTE: In chart above and the table below Biomass is the sum of Ethenol, Waste and Wood."
-        let response = page
-            .toString()
-            .replace('%%Title_Placeholder%%', `${sector}:${year}`)
-            .replace('%%Notes_Placeholder%%', Notes_String)
-            .replace('%%route%%', '/javascript/sector')
+        let query = `SELECT Image_1_ALT AS Img1, Image_2_ALT AS Img2, Image_3_ALT AS Img3 
+        FROM Sector WHERE sector_name = ?`
+        db.all(query, [sector], (err, rows) => {
+            if (err) {
+                display404Page(res)
+                return
+            }
+            // console.log(rows[0].Img1, rows[0].Img2, rows[0].Img3)
+            let response = page
+                .toString()
+                .replace('%%Title_Placeholder%%', `${sector}:${year}`)
+                .replace('%%route%%', '/javascript/sector')
+                .replace('%%Sector_Title_Placeholder%%', `${sector}:${year}`)
+                .replace('%%Image_Placeholder_1%%', `/images/${sector}_1.jpg`)
+                .replace('%%Image_Placeholder_2%%', `/images/${sector}_2.jpg`)
+                .replace('%%Image_Placeholder_3%%', `/images/${sector}_3.jpg`)
+                .replace('%%Image_Descriptor_1%%', `${rows[0].Img1}`)
+                .replace('%%Image_Descriptor_1%%', `${rows[0].Img1}`)
+                .replace('%%Image_Descriptor_2%%', `${rows[0].Img2}`)
+                .replace('%%Image_Descriptor_2%%', `${rows[0].Img2}`)
+                .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
+                .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
+                .replace('%%Sector_Type%%', `${sector}`)
+                // console.log(response)
+            res.status(200).type('html').send(response)
+        })
 
-        // need to add other transportation queries to chart representation
         // need to add images to dynamic sector pages
-        // need to figure out javascript file get error
         // need to work on centering graph
 
-        js_data_query =
-            `SELECT total, biomass, waste, ethenol, wood, hydro_electric, geothermal, solar, wind,  
-         biodiesel, renewable_diesel, other_biodiesel FROM AnnualSectorEnergy join Sector on AnnualSectorEnergy.sector_id=
-        Sector.sector_id WHERE Sector.sector_name = ? AND AnnualSectorEnergy.year = ?`
+
 
         // console.log(rows[0])
-        res.status(200).type('html').send(response)
+
     })
 
 })
@@ -166,26 +184,27 @@ app.get('/:sector/annual/:year', (req, res) => {
 app.get('/javascript/sector', (req, js_res) => {
     fs.readFile(path.join(js_dir, 'sector.js'), 'utf-8', (err, js_page) => {
         if (err) {
-            display404Page(js_res)
+            js_res.status(404).type('js').send(`Error: ${err}`)
             return
         }
         db.all(js_data_query, globalQueryConstraints, (err, rows) => {
             if (err) {
-                console.log(err)
-                // display404Page(js_res)
+                js_res.status(404).type('js').send(`Error: ${err}`)
                 return
             }
             let format_data = ``
             for (let data in rows[0]) {
-                if (rows[0][data] == '') {
-                    rows[0][data] = 0
+                if (rows[0][data] != '') {
+                    // rows[0][data] = 0
+                    format_data += `{ y: ${rows[0][data]}, label: "${data.charAt(0).toUpperCase() + data.slice(1)}"},`
                 }
-                format_data += `{ y: ${rows[0][data]}, label: "${data.charAt(0).toUpperCase() + data.slice(1)}"},`
+
             }
             let js_response = js_page
                 .toString()
                 .replace('%%Data_Placeholder%%', format_data.slice(0, -1))
                 .replace('%%Sector%%', `${globalQueryConstraints[0]} Sector`)
+                .replace('%%total_Placeholder%%', rows[0].total + 100)
             // console.log(js_response)
             js_res.status(200).type('js').send(js_response)
 
