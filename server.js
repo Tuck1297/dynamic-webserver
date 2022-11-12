@@ -130,6 +130,7 @@ function formatJavascriptData(list, transform) {
 app.get('/:sector/annual/:year', (req, res) => {
     let sector = req.params.sector
     let year = req.params.year
+
     globalQueryConstraints = []
     globalQueryConstraints.push(sector)
     globalQueryConstraints.push(year)
