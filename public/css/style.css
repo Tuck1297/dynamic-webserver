@@ -103,12 +103,8 @@ p {
     }
 }
 
-.home_graph_format {
+.graph_format {
     height: 500px;
-}
-
-.sector_graph_format {
-    height: 500px
 }
 
 .gallery_format {
@@ -190,20 +186,25 @@ background-color: rgba(0,0,0,0.8);
 }
 
 .css-3d-text {
-    font-size: 79px;
+    font-size: 3rem;
     color: #a8a8a8;
     font-family: Times New Roman;
-    text-shadow: 0px 0px 0 rgb(130,130,130),
-                 1px 1px 0 rgb(91,91,91),
-                 2px 2px 0 rgb(53,53,53),
-                 3px 3px 0 rgb(14,14,14),
-                 4px 4px 0 rgb(-24,-24,0),
-                 5px 5px  0 rgb(-62,-62,0),
-                 6px 6px 5px rgba(0,0,0,0.86),
-                 6px 6px 1px rgba(0,0,0,0.5),
-                 0px 0px 5px rgba(0,0,0,.2);
+    text-shadow: 0rem 0rem 0 rgb(130,130,130),
+                 .02rem .02rem 0 rgb(91,91,91),
+                 .03rem .03rem 0 rgb(53,53,53),
+                 .04rem .04rem 0 rgb(14,14,14),
+                 .05rem .05rem 0 rgb(-24,-24,0),
+                 .06rem .06rem  0 rgb(-62,-62,0),
+                 .07rem .07rem .5rem rgba(0,0,0,0.86),
+                 .08rem .08rem .1rem rgba(0,0,0,0.5),
+                 0rem 0rem .09rem rgba(0,0,0,.2);
  }
 
-td {
+ table {
+    border-collapse: collapse;
+    width: 100%;
+  }
+  
+  th, td {
     text-align: center;
-}
+  }

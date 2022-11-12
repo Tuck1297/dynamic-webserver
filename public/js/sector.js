@@ -14,7 +14,7 @@ var chart = new CanvasJS.Chart("chartContainer", {
         interlacedColor: "rgba(1,77,101,.2)",
         gridColor: "rgba(1,77,101,.1)",
         title: "Trillion (BTU)",
-        maximum: %%total_Placeholder%%
+        // maximum: %%total_Placeholder%%
     },
     data: [{
         type: "bar",

@@ -124,7 +124,7 @@ function formatJavascriptData(list, transform) {
 
 // Dynamic path for Sector Annual Data
 
-app.get('/:sector/annual/:year', (req, res) => {
+app.get('/sector/:sector/annual/:year', (req, res) => {
     let sector = req.params.sector
     let year = req.params.year
 
@@ -164,7 +164,6 @@ app.get('/:sector/annual/:year', (req, res) => {
                 .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
                 .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
                 .replace('%%Sector_Type%%', `${sector}`)
-            // console.log(response)
             res.status(200).type('html').send(response)
         })
     })
@@ -176,12 +175,27 @@ app.get('/javascript/sector', (req, js_res) => {
             js_res.status(404).type('js').send(`Error: ${err}`)
             return
         }
-
         db.all(js_data_query, globalQueryConstraints, (err, rows) => {
             if (err) {
                 js_res.status(404).type('js').send(`Error: ${err}`)
                 return
             }
+            if (rows.length === 0 || rows[0].total == '') {
+                // id="chartContainer"
+                // id="pie"
+                let JavaErrorRes = `
+                let graph_1 = document.getElementById('chartContainer')
+                let graph_2 = document.getElementById('pie')
+                let node = document.createElement("h2")
+                let textnode = document.createTextNode("Sorry there is currently no data available...")
+                node.appendChild(textnode)
+                graph_1.appendChild(node)
+                graph_2.appendChild(node)`
+                
+                js_res.status(200).type('js').send(JavaErrorRes)
+                return
+            }
+
             let format_data = ``
             let format_data_2 = ``
             for (let data in rows[0]) {
@@ -200,7 +214,7 @@ app.get('/javascript/sector', (req, js_res) => {
                 .replace('%%Data_Placeholder%%', format_data.slice(0, -1))
                 .replace('%%Data_Placeholder_2%%', format_data_2.slice(0, -1))
                 .replace('%%Sector%%', `${globalQueryConstraints[0]} Sector`)
-                .replace('%%total_Placeholder%%', rows[0].total + 100)
+                // .replace('%%total_Placeholder%%', parseFloat(rows[0].total) + 100)
             // console.log(js_response)
             js_res.status(200).type('js').send(js_response)
         })
@@ -211,28 +225,54 @@ app.get('/javascript/sector', (req, js_res) => {
 
 // Dynamic path for Sector Monthly Data
 
-app.get('/:sector/monthly/:month/:year', (req, res) => {
+app.get('/sector/:sector/monthly/:month/:year', (req, res) => {
+    
     let sector = req.params.sector
     let year = req.params.year
     let month = req.params.month
 
-    fs.readFile(path.join(template_dir, 'sector.html'), 'utf-8', (err, template) => {
+    globalQueryConstraints = []
+    globalQueryConstraints.push(sector)
+    globalQueryConstraints.push(year)
+    globalQueryConstraints.push(month)
+    js_data_query =
+        ` SELECT total, biomass, waste, ethenol, wood, hydro_electric, geothermal, solar, wind,
+           biodiesel, renewable_diesel, other_biodiesel FROM MonthlySectorEnergy JOIN Sector ON MonthlySectorEnergy.sector_id=
+           Sector.sector_id JOIN Month ON Month.month_id=MonthlySectorEnergy.month_id
+           WHERE Sector.sector_name = ? AND MonthlySectorEnergy.year = ? AND Month.month = ?`
 
-        populateNavigation(template, (response) => {
-
-            response = response.replace('%%Sector_Title:Date%%', `${sector}:${month}-${year}`)
-            let query =
-                `SELECT * FROM MonthlySectorEnergy JOIN Sector ON MonthlySectorEnergy.sector_id=
-                Sector.sector_id JOIN Month ON Month.month_id=MonthlySectorEnergy.month_id 
-                WHERE Sector.sector_name = ? AND MonthlySectorEnergy.year = ? AND Month.month = ?`
-
-            db.all(query, [sector, year, month], (err, rows) => {
-                // todo replace placeholders
-                console.log(rows)
-                res.status(200).type('html').send(response)
-            })
+    createPageFromDynamicTemplate('sector.html', (page) => {
+        // If there was an retrieval error -- redirect to 404 error page
+        if (page.toString().slice(0, 5) == 'Error') {
+            display404Page(res)
+            return
+        }
+        let query = `SELECT Image_1_ALT AS Img1, Image_2_ALT AS Img2, Image_3_ALT AS Img3 
+        FROM Sector WHERE sector_name = ?`
+        db.all(query, [sector], (err, rows) => {
+            if (err) {
+                display404Page(res)
+                return
+            }
+            // console.log(rows[0].Img1, rows[0].Img2, rows[0].Img3)
+            let response = page
+                .toString()
+                .replace('%%Title_Placeholder%%', `${sector}:${month}:${year}`)
+                .replace('%%route%%', '/javascript/sector')
+                .replace('%%Sector_Title_Placeholder%%', `${sector}:${month}:${year}`)
+                .replace('%%Image_Placeholder_1%%', `/images/${sector}_1.jpg`)
+                .replace('%%Image_Placeholder_2%%', `/images/${sector}_2.jpg`)
+                .replace('%%Image_Placeholder_3%%', `/images/${sector}_3.jpg`)
+                .replace('%%Image_Descriptor_1%%', `${rows[0].Img1}`)
+                .replace('%%Image_Descriptor_1%%', `${rows[0].Img1}`)
+                .replace('%%Image_Descriptor_2%%', `${rows[0].Img2}`)
+                .replace('%%Image_Descriptor_2%%', `${rows[0].Img2}`)
+                .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
+                .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
+                .replace('%%Sector_Type%%', `${sector}`)
+            // console.log(response)
+            res.status(200).type('html').send(response)
         })
-
     })
 })
 
@@ -240,6 +280,10 @@ app.get('/:sector/monthly/:month/:year', (req, res) => {
 
 app.get('/state/:state', (req, res) => {
     let state = req.params.state 
+    globalQueryConstraints = []
+    globalQueryConstraints.push(state)
+    js_data_query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
+    
     //add Javascript to head
     let graphData = ''
     let data = ''
@@ -260,6 +304,10 @@ app.get('/state/:state', (req, res) => {
     data = data + '<th>Ethenol</th>'
     data = data + '</tr>'
     createPageFromDynamicTemplate('state.html', (page) => {
+        if (page.toString().slice(0, 5) == 'Error') {
+            display404Page(res)
+            return
+        }
         let query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
         db.all(query, [state], (err, rows) => {
             //Initializing
@@ -292,14 +340,56 @@ app.get('/state/:state', (req, res) => {
             data = data + '<td>' + biodiesel + '</td>'
             data = data + '<td>' + ethenol + '</td>'
             data = data + '</tr>'
-            let finalPage = page.replace('%%Placeholder_Content%%', data)
+            let finalPage = page
+                .replace('%%Placeholder_Content%%', data)
+                .replace('%%route%%', `/javascript/state`)
+                .replace('%%Title_Placeholder%%', state)
+                // .replace('%%link_prev%%', `/state/${prev_state}`)
+                // .replace('%%link_next%%', `/state/${next_state}`)
             res.status(200).type('html').send(finalPage)
         })
     })
-    // TODO MAKE GRAPH
-    // globalQueryConstaints = []
-    // globalQueryconstaints.push(state)
-    // js_data_query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
+})
+
+app.get('/javascript/state', (req, js_res) => {
+    fs.readFile(path.join(js_dir, 'state.js'), 'utf-8', (err, js_page) => {
+        if (err) {
+            js_res.status(404).type('js').send(`Error: ${err}`)
+            return
+        }
+
+        db.all(js_data_query, globalQueryConstraints, (err, rows) => {
+            if (err) {
+                js_res.status(404).type('js').send(`Error: ${err}`)
+                return
+            }
+            let format_data = ``
+            let largest_val = 0
+            for (let data in rows[0]) {
+                let label_name = data.charAt(0).toUpperCase() + data.slice(1)
+                let current_val = parseFloat(rows[0][data])
+                if (current_val != 0 & label_name != 'State') {
+                    if (current_val > largest_val) {
+                        largest_val = current_val 
+                    }
+                    format_data += `{ y: ${current_val}, label: "${label_name}"},`
+                }
+            }
+            // console.log(rows[0])
+            
+            //let largest_val = Math.max(rows[0].slice(1, rows[0].length))
+            // console.log(largest_val)
+            let js_response = js_page
+                .toString()
+                .replace('%%Data_Placeholder%%', format_data.slice(0, -1))
+                .replace('%%State%%', rows[0].state)
+                .replace('%%Total_Placeholder%%', parseFloat(largest_val + 100))
+            // // console.log(js_response)
+            js_res.status(200).type('js').send(js_response)
+        })
+// create table that displays data
+
+    })
 })
 
 
@@ -309,6 +399,10 @@ app.get('/total_annual/:year', (req, res) => {
     let year = req.params.year
 
     createPageFromDynamicTemplate('total_annual.html', (page) => {
+        if (page.toString().slice(0, 5) == 'Error') {
+            display404Page(res)
+            return
+        }
         res.status(200).type('html').send(page)
     })
 })
@@ -319,6 +413,10 @@ app.get('/total_monthly/:month_id/:year', (req, res) => {
     let year = req.params.year
 
     createPageFromDynamicTemplate('total_monthly.html', (page) => {
+        if (page.toString().slice(0, 5) == 'Error') {
+            display404Page(res)
+            return
+        }
         let query = `SELECT coal FROM MonthlyEnergy WHERE year = ?`
 
         db.all(query, [year], (err, rows) => {
@@ -384,15 +482,15 @@ function populateNavigation(template, callback) {
             // Populate Client Navigation
             let sectorMonthlyPlaceholder =
                 createDoublyNestedListElements(sectorNames, months, years, (sn, m, y) =>
-                    `<a href=/${sn}/monthly/${m}/${y}>${y}</a>`
+                    `<a href=/sector/${sn}/monthly/${m}/${y}>${y}</a>`
                 )
             let sectorAnnualPlaceholder =
                 createNestedListElements(sectorNames, years, (sn, y) =>
-                    `<a href="/${sn}/annual/${y}">${y}</a>`
+                    `<a href="/sector/${sn}/annual/${y}">${y}</a>`
                 )
             let annualPlaceholder =
                 createListElements(years, (y) =>
-                    `<a href="/total/annual/${y}">${y}</a>`
+                    `<a href="/total_annual/${y}">${y}</a>`
                 )
             let monthPlaceholder =
                 createNestedListElements(months, years, (m, y) =>

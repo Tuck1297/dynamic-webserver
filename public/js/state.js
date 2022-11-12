@@ -1,8 +1,6 @@
-let graph_data = [%%Data_Placeholder%%]
-
+let graph_data = [%%Data_Placeholder%%];
 var chart = new CanvasJS.Chart("chartContainer", {
     animationEnabled: true,
-    
     title:{
         text:"%%State%%"
     },
@@ -12,7 +10,7 @@ var chart = new CanvasJS.Chart("chartContainer", {
     axisY2:{
         interlacedColor: "rgba(1,77,101,.2)",
         gridColor: "rgba(1,77,101,.1)",
-        title: "%%Trillion (BTU)%%"
+        title: "Trillion (BTU)",
         maximum: %%Total_Placeholder%%
     },
     data: [{
@@ -20,10 +18,9 @@ var chart = new CanvasJS.Chart("chartContainer", {
         name: "%%Type of Gas Used%%",
         axisYType: "secondary",
         color: "#014D65",
-        dataPoints: [
+        dataPoints: 
             // { y: %%data%%, label: "%%Type of Gas%%"},
             graph_data
-        ]
     }]
 });
 chart.render();
