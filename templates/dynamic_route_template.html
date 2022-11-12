@@ -69,14 +69,114 @@
     </div>
 
     <!-- This is where all the non-navigation bar information resides. -->
+    <!-- Next and Previous buttons -->
+    <a type="reset" class="prev" onclick="nextData(-1)">&#10094;</a>
+    <a type="reset" class="next" onclick="nextData(1)">&#10095;</a>
     %%Placeholder_Content%%
 
-    <script src="/javascript"></script>
+    <!-- <script src="/javascript"></script> -->
     <script src="/js/jquery.js"></script>
     <script src="/js/what-input.js"></script>
     <script src="/js/foundation.js"></script>
     <script>
         $(document).foundation();
+    </script>
+    <script>
+        let states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
+    , 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii'
+    , 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana'
+    , 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi'
+    , 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey'
+    , 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma'
+    , 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota'
+    , 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington'
+    , 'West Virginia', 'Wisconsin', 'Wyoming']
+    let yearList = createYearList()
+    let dataIndex = findIndex()
+    
+
+function findIndex(){
+    //pop off last parameter of URL
+    let lastSegmentOfURL = location.pathname.split('/').pop()
+    console.log("this is the lastSegment of the URL " + lastSegmentOfURL)
+    let data
+    console.log("this is the data befoer anything happens to it " + data)
+    if(states.includes(lastSegmentOfURL)){
+        data = states.indexOf(lastSegmentOfURL)
+        console.log("This is the data now " + data)
+    return data + 1
+
+    } else {
+        data = yearList.indexOf(parseInt(lastSegmentOfURL))
+        console.log("This is the data now p2 " + data)
+    }
+    console.log("this is the beginning of the index " + data)
+    return data
+}
+    // Next/previous controls
+function nextData(n) {
+    console.log("This is the dataIndex " + dataIndex)
+    showCurrentData(dataIndex += n)
+}
+
+function showCurrentData(dataIndex, n) {
+    let currentURL = window.location.href
+    console.log(currentURL)
+    let newPage  
+    let dataSet
+    console.log("This is the dataIndex " + dataIndex)
+    console.log("This is the location " + location.pathname.split('/').pop())
+if(yearList.includes(parseInt(location.pathname.split('/').pop())))
+{
+    dataSet = yearList
+    console.log("we are entering yearList")
+} else {
+    dataSet = states
+    console.log("we are entering states")
+}
+    console.log(dataIndex)
+    console.log(dataSet)
+    console.log(dataSet.length)
+if (n > dataSet.length) {dataIndex = 1}
+if (n < 1) {dataIndex = dataSet.length}
+    //USA Consumption by Sector Annually
+    if(/Residential/.test(window.location.href && /annual/.test(window.location.href))){
+        newPage = (dataIndex, (err, data) => {
+            data = dataSet.at(dataIndex)
+        })
+    }
+    //USA Consumption by Sector Monthly
+    if(/Residential/.test(window.location.href && /monthly/.test(window.location.href))){
+        newParameter = changeParameter(dataIndex, dataSet)
+    }
+    //USA Consumption by State
+    if(/state/.test(window.location.href)){
+        console.log('we are entering states')
+        newParameter = changeParameter(dataIndex, dataSet)
+        console.log("this is the new parameter " + newParameter)
+    }
+    //USA Consumption by Year
+    if(/total/.test(window.location.href)&& /annual/.test(window.location.href)){
+        newParameter = changeParameter(dataIndex, dataSet)
+    }
+    //USA Consumption by Month
+    if(/total_monthly/.test(window.location.href)){
+        newParameter = changeParameter(dataIndex, dataSet)
+    }
+    location.assign(currentURL.replace(/\/[^\/]*$/, '/' + newParameter))
+}
+
+function createYearList(){
+    let array = []
+    for(let i = 1949; i < 2022; i++){
+        array.push(i)
+    }
+    return array
+}
+function changeParameter(dataIndex, dataSet){
+    let data = dataSet.at(dataIndex)
+    return data
+}
     </script>
     <script src="/js/app.js"></script>
 </body>

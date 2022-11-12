@@ -208,36 +208,19 @@ app.get('/:sector/monthly/:month/:year', (req, res) => {
 
 app.get('/state/:state', (req, res) => {
     let state = req.params.state
-
-    // todo add html template
-    fs.readFile(path.join(template_dir, 'state.html'), 'utf-8', (err, template) => {
-
-        populateNavigation(template, (response) => {
-            response = response.replace('%%State%%', `${state}`)
-            // todo write query
-            let query ='SELECT State,Coal,Natural Gas excluding Supplemental Gaseous Fuels,Distillate \
-                    Fuel Oil excluding Biodiesel,HGL,Jet Fuel,Petroleum Motor Gasoline excluding Fuel Ethanol , \
-                    Residual Fuel Oil,Other,total fossil,supplemental_gaseous_fuel,biodiesel,ethanol'
-
-            db.all(query, [state], (err, rows) => {
-                // todo replace placeholders
-                let response = template.toString()
-                // response = response.replace('%%CEREAL_INFO%%', rows[1].cereal);
-                let data = '';
-                console.log(rows)
-                // for(let i = 0; i < rows.length; i++){
-                //     data = data + '<tr>'
-                //     data = data + '<tb>' + rows[i].state + rows[i].coal + '</tb>'
-                //     data = data + '<td>' + rows[i].state + '<td>'
-                //     data = data + '<tr>'
-                // }
-                response = response.replace('%%INFO%%', data);
-                console.log("this is working as intended")
-                res.status(200).type('html').send(response)
-            })
-        console.log("We are inside the file")
+    createPageFromDynamicTemplate('state.html', (page) => {
+        let query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
+        db.all(query, [state], (err, rows) => {
+            let data = '';
+            // for(let i of rows){
+            //     data = data + 
+            //     response.replace("%%Placeholder_Content%%", data)
+            // }
+            
+            // console.log(rows.at(1))
+            // console.log("this is working as intended")
+            res.status(200).type('html').send(page)
         })
-    console.log("We are outside of the file.")
     })
 })
 
@@ -429,25 +412,81 @@ app.listen(port, () => {
     console.log('Now listening on port ' + port);
 });
 
-// //TODO: Specify where dataIndex comes from
-// let dataIndex = 1;
-// showCurrentData(dataIndex)
+// let dataIndex = findIndex()
 
-// // Next/previous controls
+// function findIndex(){
+//     //pop off last parameter of URL
+//     let lastSegmentOfURL = location.pathname.split('/').pop()
+//     let states = `SELECT state FROM StateEnergy2020`
+//     let yearList = `SELECT Year FROM AnnualEnergy`
+//     let data
+//     if(states.includes(lastSegmentOfURL)){
+//         data = states.indexOf(lastSegmentOfURL)
+//     } else {
+//         data = yearList.indexOf(lastSegmentOfURL)
+//     }
+//     return data + 2
+    
+// }
+//     // Next/previous controls
 // function nextData(n) {
 //     showCurrentData(dataIndex += n)
 // }
 
-// Should update the page with data from the database
-// TODO: Should grab data from database
-// function showCurrentData(n) {
-//   let i;
-//   let data = document.getElementsByClassName("data");
-//   if (n > data.length) {dataIndex = 1}
-//   if (n < 1) {dataIndex = data.length}
-//   for (i = 0; i < data.length; i++) {
-//     data[i].style.display = "none"
-//   }
-//   data[dataIndex-1].style.display = "block"
+// // Should update the page with data from the database
+// // TODO: Should change URL
+// function showCurrentData(dataIndex, n) {
+//     //redirect page depending on URL
+//     let currentURL = window.location.href
+//     console.log(currentURL)
+//     let newPage  
+//     let states = `SELECT state FROM StateEnergy2020`
+//     let yearList = `SELECT Year FROM AnnualEnergy`
+//     let dataSet
+//     if(yearList.includes(location.pathname.split('/').pop()))
+//     {
+//         dataSet = yearList
+//         console.log("we are entering yearList")
+//     } else {
+//         dataSet = states
+//         console.log("we are entering states")
+//     }
+//     console.log(dataIndex)
+//     console.log(dataSet)
+//     console.log(dataSet.length)
+//     if (n > dataSet.length) {dataIndex = 1}
+//     if (n < 1) {dataIndex = dataSet.length}
+//     //USA Consumption by Sector Annually
+//     if(/Residential/.test(window.location.href && /annual/.test(window.location.href))){
+//         newPage = (dataIndex, (err, data) => {
+//             data = dataSet.at(dataIndex)
+//         })
+//     }
+//     //USA Consumption by Sector Monthly
+//     if(/Residential/.test(window.location.href && /monthly/.test(window.location.href))){
+//         newParameter = changeParameter(dataIndex, dataSet)
+//     }
+//     //USA Consumption by State
+//     if(/state/.test(window.location.href)){
+//         console.log('we are entering states')
+//         newParameter = changeParameter(dataIndex, dataSet)
+//         console.log("this is the new parameter " + newParameter)
+//     }
+//     //USA Consumption by Year
+//     if(/total/.test(window.location.href)&& /annual/.test(window.location.href)){
+//         newParameter = changeParameter(dataIndex, dataSet)
+//     }
+//     //USA Consumption by Month
+//     if(/total_monthly/.test(window.location.href)){
+//         newParameter = changeParameter(dataIndex, dataSet)
+//     }
+//     // location.assign(currentURL.replace(/\/[^\/]*$/, newPage))
+// }
+
+// function changeParameter(dataIndex, dataSet){
+//     console.log("this is the dataSet " + dataSet)
+//     console.log("This is the dataIndex " + dataIndex)
+//     let data = dataSet.at(dataIndex)
+//     console.log("This is the data " + data)
 // }
 
