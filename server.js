@@ -509,34 +509,25 @@ app.get('/javascript/state', (req, js_res) => {
 app.get('/total_annual/:year', (req, res) => {
     let year = parseInt(req.params.year)
    
-    canvasQuery = `SELECT * FROM Sector WHERE year = ?` // Query to retrieve data that will populate javascript graph
+    canvasQuery = `SELECT * FROM AnnualEnergy WHERE year = ?` // Query to retrieve data that will populate javascript graph
     canvasQueryParams = [year]
 
-    /* Will send 404 error page if year is outside the bounds defined for this dataset */
     checkBounds(year, null, "AnnualEnergy")
     .then((result) => {
         if (result == true) {
-            display404Page(res, `Error: no data for total_annual/${year}`)
+            display404Page(res, `Error: no data for total_monthly/${year}`)
             return
         }
 
-        createPageFromDynamicTemplate('total.html', res, (page) => {
-            if (page.toString().slice(0, 5) == 'Error') {
-                display404Page(res, `Error: no data for total_annual/${year}`)
-                return
-            }
-            // build table to display data here
-            /* Put Database call and updated dynamic page placeholders here 
-            1. %%Title_Placeholder%% --> Title (browser table title)
-            2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
-            3. %%route%% --> Is the javascript route '/javascript/total'
-            
-    */        
+        createPageFromDynamicTemplate('total.html', res, (page) => {        
             res.status(200).type('html').send(
                 page.replace('%%route%%', `/javascript/total`)
                     .replace('%%Title%%', `${year}`)
             )
         })
+    })
+    .catch((err) => {
+        console.error(err)
     })
 })
 
@@ -546,7 +537,7 @@ app.get('/total_monthly/:month/:year', (req, res) => {
     let monthID = getMonthID(month)
     let year = parseInt(req.params.year)
     canvasQuery = `SELECT * from MonthlyEnergy WHERE month_id = ? AND year = ?`
-    canvasQueryParams = [monthID, year]
+    canvasQueryParams = [year, monthID]
 
     checkBounds(year, month, "MonthlyEnergy")
     .then((result) => {
@@ -567,17 +558,6 @@ app.get('/total_monthly/:month/:year', (req, res) => {
     })
 })
 
-/* Request for the javascript file -- will only be called from the 
-    total annually and total monthly requests.  
-    TODO: 
-        1. DB call to retrieve data that want to put into Javascript graph
-        2. format {key: number, label: 'string'} NOTE: separate with commas
-        3. replace formated data with data placeholder with name comment below
-
-        In total.js
-        1. Choose what kind of graph you want to display
-        2. make sure names are set to describe the graph
-*/
 app.get('/javascript/total', (req, js_res) => {
     console.log('check')
     fs.readFile(path.join(js_dir, 'total.js'), 'utf-8', (err, js_file) => {
@@ -603,9 +583,9 @@ app.get('/javascript/total', (req, js_res) => {
                     rows[0][property] = 0
                 }
             }
-
-            let [monthID, year] = canvasQueryParams
-            let month = getMonthFromID(monthID)
+            
+            let [year, monthID] = canvasQueryParams
+            let month = getMonthFromID(monthID) || ''
             let rowEntries = Object.entries(rows[0])
                   
             let tableHeaders = rowEntries
