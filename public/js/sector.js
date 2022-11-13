@@ -1,5 +1,7 @@
 let graph_data = [%%Data_Placeholder%%]
 let type_data = [%%Data_Placeholder_2%%]
+let table = document.getElementById('table')
+table.innerHTML = '%%table_data%%'
 
 var chart = new CanvasJS.Chart("chartContainer", {
     animationEnabled: true,

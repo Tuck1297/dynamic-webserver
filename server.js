@@ -17,7 +17,11 @@ let port = 8000;
 
 let globalQueryConstraints = []
 let homeGlobalData = []
-let js_data_query = ``
+let js_data_query = `SELECT * from AnnualSectorEnergy`
+
+let min_year = 1949
+let max_year = 2021
+
 
 // Open SQLite3 database (in read-only mode)
 let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
@@ -125,8 +129,14 @@ function formatJavascriptData(list, transform) {
 // Dynamic path for Sector Annual Data
 
 app.get('/sector/:sector/annual/:year', (req, res) => {
+
     let sector = req.params.sector
     let year = req.params.year
+
+    /* Will send 404 error page if year is outside the bounds defined for this dataset */
+    if (isInYearBounds(year, res) == true) {
+        return
+    }
 
     globalQueryConstraints = []
     globalQueryConstraints.push(sector)
@@ -145,6 +155,10 @@ app.get('/sector/:sector/annual/:year', (req, res) => {
         FROM Sector WHERE sector_name = ?`
         db.all(query, [sector], (err, rows) => {
             if (err) {
+                display404Page(res)
+                return
+            }
+            if (rows.length == 0) {
                 display404Page(res)
                 return
             }
@@ -191,10 +205,21 @@ app.get('/javascript/sector', (req, js_res) => {
                 node.appendChild(textnode)
                 graph_1.appendChild(node)
                 graph_2.appendChild(node)`
-                
+
                 js_res.status(200).type('js').send(JavaErrorRes)
                 return
             }
+            let header = ``
+            let row1data = ``
+            for (let data in rows[0]) {
+                header += `<th>${data.slice(0,1).toUpperCase()+data.slice(1,data.length)}</th>`
+                let data_temp = rows[0][data]
+                if (data_temp == '') {
+                    data_temp = 0
+                }
+                row1data += `<td>${data_temp}</td>`;
+            }
+            let table = `<tr>${header}</tr><tr>${row1data}</tr>`
 
             let format_data = ``
             let format_data_2 = ``
@@ -204,21 +229,20 @@ app.get('/javascript/sector', (req, js_res) => {
                     if (label_name !== 'Biomass' & label_name !== 'Total') {
                         format_data_2 += `{ y: ${rows[0][data]}, label: "${label_name}"},`
                     }
-                    // rows[0][data] = 0
                     format_data += `{ y: ${rows[0][data]}, label: "${label_name}"},`
                 }
-
             }
             let js_response = js_page
                 .toString()
                 .replace('%%Data_Placeholder%%', format_data.slice(0, -1))
                 .replace('%%Data_Placeholder_2%%', format_data_2.slice(0, -1))
                 .replace('%%Sector%%', `${globalQueryConstraints[0]} Sector`)
-                // .replace('%%total_Placeholder%%', parseFloat(rows[0].total) + 100)
+                .replace('%%table_data%%', table)
+            // .replace('%%total_Placeholder%%', parseFloat(rows[0].total) + 100)
             // console.log(js_response)
             js_res.status(200).type('js').send(js_response)
         })
-// create table that displays data
+        // create table that displays data
 
     })
 })
@@ -226,10 +250,19 @@ app.get('/javascript/sector', (req, js_res) => {
 // Dynamic path for Sector Monthly Data
 
 app.get('/sector/:sector/monthly/:month/:year', (req, res) => {
-    
+
     let sector = req.params.sector
     let year = req.params.year
     let month = req.params.month
+
+    /* Will send 404 error page if year is outside the bounds defined for this dataset */
+    if (isInYearBounds(year, res) == true) {
+        return
+    }
+
+    if (isInMonthBounds(month, res) == true) {
+        return
+    }
 
     globalQueryConstraints = []
     globalQueryConstraints.push(sector)
@@ -251,6 +284,10 @@ app.get('/sector/:sector/monthly/:month/:year', (req, res) => {
         FROM Sector WHERE sector_name = ?`
         db.all(query, [sector], (err, rows) => {
             if (err) {
+                display404Page(res)
+                return
+            }
+            if (rows.length == 0) {
                 display404Page(res)
                 return
             }
@@ -279,30 +316,30 @@ app.get('/sector/:sector/monthly/:month/:year', (req, res) => {
 // Dynamic path for State Data
 
 app.get('/state/:state', (req, res) => {
-    let state = req.params.state 
+    let state = req.params.state
     globalQueryConstraints = []
     globalQueryConstraints.push(state)
     js_data_query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
-    
+
     //add Javascript to head
-    let graphData = ''
-    let data = ''
-    //creating headers
-    data = data + '<tr>'
-    data = data + '<th>State</th>'
-    data = data + '<th>Coal</th>'
-    data = data + '<th>Natural Gas</th>'
-    data = data + '<th>Distillate Fuel</th>'
-    data = data + '<th>HGL</th>'
-    data = data + '<th>Jet Fuel</th>'
-    data = data + '<th>Petroleum Gasoline</th>'
-    data = data + '<th>Residual Fuel</th>'
-    data = data + '<th>Other</th>'
-    data = data + '<th>Total Fossil Fuel</th>'
-    data = data + '<th>Supplemental Gaseous Fuel</th>'
-    data = data + '<th>Biodiesel</th>'
-    data = data + '<th>Ethenol</th>'
-    data = data + '</tr>'
+    // let graphData = ''
+    // let data = ''
+    // //creating headers
+    // data = data + '<tr>'
+    // data = data + '<th>State</th>'
+    // data = data + '<th>Coal</th>'
+    // data = data + '<th>Natural Gas</th>'
+    // data = data + '<th>Distillate Fuel</th>'
+    // data = data + '<th>HGL</th>'
+    // data = data + '<th>Jet Fuel</th>'
+    // data = data + '<th>Petroleum Gasoline</th>'
+    // data = data + '<th>Residual Fuel</th>'
+    // data = data + '<th>Other</th>'
+    // data = data + '<th>Total Fossil Fuel</th>'
+    // data = data + '<th>Supplemental Gaseous Fuel</th>'
+    // data = data + '<th>Biodiesel</th>'
+    // data = data + '<th>Ethenol</th>'
+    // data = data + '</tr>'
     createPageFromDynamicTemplate('state.html', (page) => {
         if (page.toString().slice(0, 5) == 'Error') {
             display404Page(res)
@@ -310,42 +347,58 @@ app.get('/state/:state', (req, res) => {
         }
         let query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
         db.all(query, [state], (err, rows) => {
-            //Initializing
-            let state = rows.map((row) => row.state)
-            let coal = rows.map((row) => row.coal)
-            let naturalGas = rows.map((row) => row.natural_gas)
-            let distillateFuel = rows.map((row) => row.distillate_fuel)
-            let hgl = rows.map((row) => row.hgl)
-            let jetFuel = rows.map((row) => row.jet_fuel)
-            let petroleumGasoline = rows.map((row) => row.petroleum_gasoline)
-            let residualFuel = rows.map((row) => row.residual_fuel)
-            let other = rows.map((row) => row.other)
-            let totalFossilFuel = rows.map((row) => row.total_fossil_fuel)
-            let supplementalGaseousFuel = rows.map((row) => row.supplemental_gaseous_fuel)
-            let biodiesel = rows.map((row) => row.biodiesel)
-            let ethenol = rows.map((row) => row.ethenol)
-            //creating row
-            data = data + '<tr>'
-            data = data + '<td>' + state + '</td>' 
-            data = data + '<td>' + coal + '</td>' 
-            data = data + '<td>' + naturalGas + '</td>' 
-            data = data + '<td>' + distillateFuel + '</td>'
-            data = data + '<td>' + hgl + '</td>'
-            data = data + '<td>' + jetFuel + '</td>'
-            data = data + '<td>' + petroleumGasoline + '</td>'
-            data = data + '<td>' + residualFuel + '</td>'
-            data = data + '<td>' + other + '</td>'
-            data = data + '<td>' + totalFossilFuel + '</td>'
-            data = data + '<td>' + supplementalGaseousFuel + '</td>'
-            data = data + '<td>' + biodiesel + '</td>'
-            data = data + '<td>' + ethenol + '</td>'
-            data = data + '</tr>'
+            if (err) {
+                display404Page(res)
+                return
+            }
+            if (rows.length === 0) {
+                display404Page(res)
+                return
+            }
+            let header = ``
+            let row1data = ``
+            for (let data in rows[0]) {
+                header += `<th>${data.slice(0,1).toUpperCase()+data.slice(1,data.length)}</th>`
+                row1data += `<td>${rows[0][data]}</td>`;
+            }
+            let table = `<tr>${header}</tr>
+                         <tr>${row1data}</tr>`
+            // //Initializing
+            // let state = rows.map((row) => row.state)
+            // let coal = rows.map((row) => row.coal)
+            // let naturalGas = rows.map((row) => row.natural_gas)
+            // let distillateFuel = rows.map((row) => row.distillate_fuel)
+            // let hgl = rows.map((row) => row.hgl)
+            // let jetFuel = rows.map((row) => row.jet_fuel)
+            // let petroleumGasoline = rows.map((row) => row.petroleum_gasoline)
+            // let residualFuel = rows.map((row) => row.residual_fuel)
+            // let other = rows.map((row) => row.other)
+            // let totalFossilFuel = rows.map((row) => row.total_fossil_fuel)
+            // let supplementalGaseousFuel = rows.map((row) => row.supplemental_gaseous_fuel)
+            // let biodiesel = rows.map((row) => row.biodiesel)
+            // let ethenol = rows.map((row) => row.ethenol)
+            // //creating row
+            // data = data + '<tr>'
+            // data = data + '<td>' + state + '</td>'
+            // data = data + '<td>' + coal + '</td>'
+            // data = data + '<td>' + naturalGas + '</td>'
+            // data = data + '<td>' + distillateFuel + '</td>'
+            // data = data + '<td>' + hgl + '</td>'
+            // data = data + '<td>' + jetFuel + '</td>'
+            // data = data + '<td>' + petroleumGasoline + '</td>'
+            // data = data + '<td>' + residualFuel + '</td>'
+            // data = data + '<td>' + other + '</td>'
+            // data = data + '<td>' + totalFossilFuel + '</td>'
+            // data = data + '<td>' + supplementalGaseousFuel + '</td>'
+            // data = data + '<td>' + biodiesel + '</td>'
+            // data = data + '<td>' + ethenol + '</td>'
+            // data = data + '</tr>'
             let finalPage = page
-                .replace('%%Placeholder_Content%%', data)
+                .replace('%%Placeholder_Content%%', table)
                 .replace('%%route%%', `/javascript/state`)
                 .replace('%%Title_Placeholder%%', state)
-                // .replace('%%link_prev%%', `/state/${prev_state}`)
-                // .replace('%%link_next%%', `/state/${next_state}`)
+            // .replace('%%link_prev%%', `/state/${prev_state}`)
+            // .replace('%%link_next%%', `/state/${next_state}`)
             res.status(200).type('html').send(finalPage)
         })
     })
@@ -370,13 +423,13 @@ app.get('/javascript/state', (req, js_res) => {
                 let current_val = parseFloat(rows[0][data])
                 if (current_val != 0 & label_name != 'State') {
                     if (current_val > largest_val) {
-                        largest_val = current_val 
+                        largest_val = current_val
                     }
                     format_data += `{ y: ${current_val}, label: "${label_name}"},`
                 }
             }
             // console.log(rows[0])
-            
+
             //let largest_val = Math.max(rows[0].slice(1, rows[0].length))
             // console.log(largest_val)
             let js_response = js_page
@@ -387,7 +440,7 @@ app.get('/javascript/state', (req, js_res) => {
             // // console.log(js_response)
             js_res.status(200).type('js').send(js_response)
         })
-// create table that displays data
+        // create table that displays data
 
     })
 })
@@ -397,6 +450,11 @@ app.get('/javascript/state', (req, js_res) => {
 // Dynamic path for Total Annual Data
 app.get('/total_annual/:year', (req, res) => {
     let year = req.params.year
+
+    /* Will send 404 error page if year is outside the bounds defined for this dataset */
+    if (isInYearBounds(year, res) == true) {
+        return
+    }
 
     createPageFromDynamicTemplate('total_annual.html', (page) => {
         if (page.toString().slice(0, 5) == 'Error') {
@@ -409,8 +467,17 @@ app.get('/total_annual/:year', (req, res) => {
 
 // Dynamic path for Total Monthly Data
 app.get('/total_monthly/:month_id/:year', (req, res) => {
-    let monthID = req.params.month
+    let monthID = req.params.month_id
     let year = req.params.year
+
+    /* Will send 404 error page if year is outside the bounds defined for this dataset */
+    if (isInYearBounds(year, res) == true) {
+        return
+    }
+
+    if (isInMonthBounds(monthID, res) == true) {
+        return
+    }
 
     createPageFromDynamicTemplate('total_monthly.html', (page) => {
         if (page.toString().slice(0, 5) == 'Error') {
@@ -451,7 +518,6 @@ function createPageFromDynamicTemplate(contentFileName, onContentInserted) {
         if (err) {
             onContentInserted(err)
         }
-
         fs.readFile(templatePath, 'utf-8', (err, template) => {
             if (err) {
                 onContentInserted(err)
@@ -523,6 +589,23 @@ function display404Page(res) {
         }
         res.status(404).type('html').send(template)
     })
+}
+
+/* Will redirect to error page if year is outside the bounds defined for the used dataset */
+function isInYearBounds(year, res) {
+    if (year < min_year || year > max_year) {
+        display404Page(res)
+        return true
+    }
+    return false
+}
+
+function isInMonthBounds(month, res) {
+    if (months.includes(month) == false) {
+        display404Page(res)
+        return true
+    }
+    return false
 }
 
 function createDoublyNestedListElements(grandparentList, parentList, childList, childTransform) {
