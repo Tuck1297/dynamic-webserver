@@ -504,8 +504,8 @@ app.get('/javascript/state', (req, js_res) => {
 // Dynamic path for Total Annual Data
 app.get('/total_annual/:year', (req, res) => {
     let year = req.params.year
-
-    canvasQuery = `SELECT * FROM Sector` // Query to retrieve data that will populate javascript graph
+   
+    canvasQuery = `SELECT * FROM Sector WHERE year = ?` // Query to retrieve data that will populate javascript graph
     canvasQueryParams = [year]
 
     /* Will send 404 error page if year is outside the bounds defined for this dataset */
@@ -516,23 +516,23 @@ app.get('/total_annual/:year', (req, res) => {
                 return
             }
 
-            createPageFromDynamicTemplate('total.html', res, (page) => {
-                if (page.toString().slice(0, 5) == 'Error') {
-                    display404Page(res, `Error: no data for total_annual/${year}`)
-                    return
-                }
-                // build table to display data here
-                /* Put Database call and updated dynamic page placeholders here 
-                1. %%Title_Placeholder%% --> Title (browser table title)
-                2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
-                3. %%route%% --> Is the javascript route '/javascript/total'
-                
-                */
-                let finalPage = page
-                    .replace('%%route%%', `/javascript/total`)
-                res.status(200).type('html').send(finalPage)
+                    createPageFromDynamicTemplate('total.html', res, (page) => {
+                        if (page.toString().slice(0, 5) == 'Error') {
+                            display404Page(res, `Error: no data for total_annual/${year}`)
+                            return
+                        }
+                        // build table to display data here
+                        /* Put Database call and updated dynamic page placeholders here 
+                        1. %%Title_Placeholder%% --> Title (browser table title)
+                        2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
+                        3. %%route%% --> Is the javascript route '/javascript/total'
+                        
+                */        
+                        res.status(200).type('html').send(
+                            page.replace('%%route%%', `/javascript/total`)
+                        )
+                    })
             })
-        })
 })
 
 // Dynamic path for Total Monthly Data
@@ -545,38 +545,58 @@ app.get('/total_monthly/:month/:year', (req, res) => {
     console.log(monthID)
 
     checkBounds(year, month, "MonthlyEnergy")
-        .then((result) => {
-            if (result == true) {
-                display404Page(res, `Error: no data for total_monthly/${month}/${year}`)
-                return
-            }
+    .then((result) => {
+        if (result == true) {
+            display404Page(res, `Error: no data for total_monthly/${month}/${year}`)
+            return
+        }
 
-            let tableQuery = `SELECT * FROM MonthlyEnergy WHERE month_id = ? AND year = ?`
+        let tableQuery = `SELECT * FROM MonthlyEnergy WHERE month_id = ? AND year = ?`
 
-            canvasQuery = `SELECT * from Sector`
-            canvasQueryParams = [year, monthID]
+        canvasQuery = `SELECT * from MonthlyEnergy WHERE month_id = ? AND year = ?`
+        canvasQueryParams = [year, monthID]
 
-            callDatabase(tableQuery, [monthID, year], res)
-                .then((rows) => {
+        callDatabase(tableQuery, [monthID, year], res)
+        .then((rows) => {
 
-                    /* Put Database call and updated dynamic page placeholders here 
-                    1. %%Title_Placeholder%% --> Title (browser table title)
-                    2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
-                    3. %%route%% --> Is the javascript route '/javascript/total'
-                    */
+            /* Put Database call and updated dynamic page placeholders here 
+            1. %%Title_Placeholder%% --> Title (browser table title)
+            2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
+            3. %%route%% --> Is the javascript route '/javascript/total'
+            */
 
-                    createPageFromDynamicTemplate('total_monthly.html', res, (page) => {
-                        res.status(200).type('html').send(
-                            page.replace('%%Placeholder_Test%%', rows.map((r) => r.coal))
-                                .replace('%%route%%', `/javascript/total`)
-                        )
-                    })
-                })
-                .catch((err) => {
-                    console.error(err)
-                })
+            let rowEntries = Object.entries(rows[0])
+
+            let tableHeaders = rowEntries
+                .map( ([key, value]) => `<th>${key}</th>` )
+                .join('')
+
+            let tableRows = rowEntries
+                .map( ([key, value]) => `<td>${value}</td>` )
+                .join('')
+
+            let table = `<tr>${tableHeaders}</tr><tr>${tableRows}</tr>`
+
+            let dataPoints = rowEntries
+                .map( ([key, value]) => `{ y: ${value}; label: ${key} }` )
+                .join(', ')
+
+            createPageFromDynamicTemplate('total.html', res, (page) => {        
+                res.status(200).type('html').send(
+                    page.replace('%%Title_Placeholder%%', `${month} ${year}`)
+                        .replace('%%Total_Title%%', `${month} ${year}`)
+                        .replace('%%Placeholder_Content%%', table)
+                        .replace('%%Data_Placeholder%%', dataPoints)
+                        .replace('%%route%%', `/javascript/total`)
+                )
+            })
         })
+    })
+    .catch((err) => {
+        console.error(err)
+    })
 })
+
 /* Request for the javascript file -- will only be called from the 
     total annually and total monthly requests.  
     TODO: 
@@ -600,9 +620,37 @@ app.get('/javascript/total', (req, js_res) => {
                 js_res.status(404).type('js').send(`Error: ${err}`)
                 return
             }
-            /* 
-                1. %%Data_Placeholder%% --> Place Graph Data here after format
-            */
+            
+            let header
+            let rowData = ``
+            for (let data in rows[0]) {
+                header =`<th>${data.slice(0, 1).toUpperCase() + data.slice(1, data.length)}</th>`
+                let data_temp = rows[0][data]
+                if (data_temp == '') {
+                    data_temp = 0
+                }
+                rowData += `<td>${data_temp}</td>`;
+            }
+
+            let table = `<tr>${header}</tr><tr>${rowData}</tr>`
+            let format_data = ``
+            let format_data_2 = ``
+            for (let data in rows[0]) {
+                let label_name = data.charAt(0).toUpperCase() + data.slice(1)
+                if (rows[0][data] != '') {
+                    if (label_name !== 'Biomass' & label_name !== 'Total') {
+                        format_data_2 += `{ y: ${rows[0][data]}, label: "${label_name}"},`
+                    }
+                    format_data += `{ y: ${rows[0][data]}, label: "${label_name}"},`
+                }
+            }
+            let js_response = js_page
+                .toString()
+                .replace('%%Data_Placeholder%%', format_data.slice(0, -1))
+                .replace('%%Data_Placeholder_2%%', format_data_2.slice(0, -1))
+                .replace('%%Sector%%', `${canvasQueryParams[0]} Sector`)
+                .replace('%%table_data%%', table)
+            js_res.status(200).type('js').send(js_response)
 
             js_res.status(200).type('js').send(js_page)
         })
