@@ -478,11 +478,14 @@ app.get('/javascript/state', (req, js_res) => {
 
             //let largest_val = Math.max(rows[0].slice(1, rows[0].length))
             // console.log(largest_val)
+            let state = rows[0].state
+        
             let js_response = js_page
                 .toString()
                 .replace('%%Data_Placeholder%%', format_data.slice(0, -1))
                 .replace('%%State%%', rows[0].state)
                 .replace('%%Total_Placeholder%%', parseFloat(largest_val + 100))
+                .replace('%%abrev_placeholder%%', state)
             // // console.log(js_response)
             js_res.status(200).type('js').send(js_response)
         })

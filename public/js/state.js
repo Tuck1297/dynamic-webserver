@@ -24,3 +24,6 @@ var chart = new CanvasJS.Chart("chartContainer", {
     }]
 });
 chart.render();
+
+let state = document.getElementById('%%abrev_placeholder%%')
+state.style.fill = 'rgb(100,190,100)'
