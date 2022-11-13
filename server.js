@@ -475,7 +475,7 @@ app.get('/total_annual/:year', (req, res) => {
             display404Page(res)
             return
         }
-
+        // build table to display data here
         /* Put Database call and updated dynamic page placeholders here 
         1. %%Title_Placeholder%% --> Title (browser table title)
         2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
@@ -501,9 +501,8 @@ app.get('/total_monthly/:month/:year', (req, res) => {
 
     callDatabase(tableQuery, [monthID, year], res)
     .then((rows) => {
-        console.log(rows)
-
-            /* Put Database call and updated dynamic page placeholders here 
+     
+        /* Put Database call and updated dynamic page placeholders here 
         1. %%Title_Placeholder%% --> Title (browser table title)
         2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
         3. %%route%% --> Is the javascript route '/javascript/total'
@@ -511,8 +510,7 @@ app.get('/total_monthly/:month/:year', (req, res) => {
 
         createPageFromDynamicTemplate('total_monthly.html', res, (page) => {        
             res.status(200).type('html').send(
-                page
-                    .replace('%%Placeholder_Test%%', rows.map((r) => r.coal))
+                page.replace('%%Placeholder_Test%%', rows.map((r) => r.coal))
                     .replace('%%route%%', `/javascript/total`)
             )
         })
@@ -522,8 +520,19 @@ app.get('/total_monthly/:month/:year', (req, res) => {
     })
 })
 
+/* Request for the javascript file -- will only be called from the 
+    total annually and total monthly requests.  
+    TODO: 
+        1. DB call to retrieve data that want to put into Javascript graph
+        2. format {key: number, label: 'string'} NOTE: separate with commas
+        3. replace formated data with data placeholder with name comment below
+
+        In total.js
+        1. Choose what kind of graph you want to display
+        2. make sure names are set to describe the graph
+*/
 app.get('/javascript/total', (req, js_res) => {
-    fs.readFile(path.join(js_dir, 'date.js'), 'utf-8', (err, js_page) => {
+    fs.readFile(path.join(js_dir, 'total.js'), 'utf-8', (err, js_page) => {
         if (err) {
             js_res.status(404).type('js').send(`Error: ${err}`)
             return
@@ -540,8 +549,6 @@ app.get('/javascript/total', (req, js_res) => {
 
             js_res.status(200).type('js').send(js_page)
         })
-        // create table that displays data
-
     })
 })
 
