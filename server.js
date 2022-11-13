@@ -604,7 +604,8 @@ app.get('/javascript/total', (req, js_res) => {
                 return
             }
 
-            let [month, year] = canvasQueryParams
+            let [monthID, year] = canvasQueryParams
+            let month = months[monthID]
             let rowEntries = Object.entries(rows[0])
 
             //console.log(`entries: ${rowEntries}`);
