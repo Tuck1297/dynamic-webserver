@@ -523,6 +523,7 @@ app.get('/total_annual/:year', (req, res) => {
             res.status(200).type('html').send(
                 page.replace('%%route%%', `/javascript/total`)
                     .replace('%%Title%%', `${year}`)
+                    .replace('%%Title_Placeholder%%', `Total: ${year}`)
             )
         })
     })
@@ -550,6 +551,7 @@ app.get('/total_monthly/:month/:year', (req, res) => {
             res.status(200).type('html').send(
                 page.replace('%%route%%', `/javascript/total`)
                     .replace('%%Title%%', `${month} ${year}`)
+                    .replace('%%Title_Placeholder%%', `Total: ${month}/${year}`)
             )
         })
     })
