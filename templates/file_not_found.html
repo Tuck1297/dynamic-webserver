@@ -10,29 +10,31 @@
     <title>Page not found...</title>
 </head>
 
-<body style="background-image: url(/images/background-default.jpg); background-repeat: repeat-y; background-size: cover;">
-  <!-- Title bar for all elements -->
-  <div class="title-bar" style="background-color: #1a8fc1; height: 40px;">
-    <div class="title-bar-left">
-        <a href="/homepage" target="_self" class="home_btn">HOME</a>
-    </div>
-      
-  </div>
+<body
+    style="background-image: url(/images/background-default.jpg); background-repeat: repeat-y; background-size: cover;">
+    <!-- Title bar for all elements -->
+    <div class="title-bar" style="background-color: #1a8fc1; height: 40px;">
+        <div class="title-bar-left">
+            <a href="/homepage" target="_self" class="home_btn">HOME</a>
+        </div>
 
-  <!-- This is where all the non-navigation bar information resides. -->
-  <div class="off-canvas-content">
+    </div>
+
+    <!-- This is where all the non-navigation bar information resides. -->
+    <div class="off-canvas-content">
         <div class="grid-x grid-padding-x">
             <!-- Buffer for large and medium web pages -->
             <div class="large-2 medium-1 small-0 cell"></div>
             <div class="large-8 medium-10 small-12 center-content">
-                <div style="height: 100px"></div>
-                <div class="image_format">
-                  <img src="/images/error_page_img.jpg" alt="Broken Gear Icon">  
+                <div class="large-6 medium-12 small-12 cell err_image_display">
+                    <img class="iamge_gallery_format" id="err_img_format" src="/images/error_page_img_min.jpg"
+                        alt="3D Rendering of a HydroPlant">
+                    <div class="image_text_block">
+                        <p>3D Rendering of a HydroPlant</p>
+                    </div>
                 </div>
-                
-                
                 <div class="error_center">
-                    <p>The page you are currently trying to reach is either not available
+                    <p id="err_box">The page you are currently trying to reach is either not available
                         or does not exist at this time. Please try back again later. If problems
                         persist please contact the administrator of this domain. Thank you.
                     </p>
@@ -40,7 +42,7 @@
             </div>
             <div class="large-2 medium-1 small-0 cell"></div>
         </div>
-  </div>
+    </div>
 
     <script src="/js/script.js"></script>
     <script src="/js/jquery.js"></script>

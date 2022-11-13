@@ -5,6 +5,7 @@ let path = require('path');
 // NPM modules
 let express = require('express');
 let sqlite3 = require('sqlite3');
+const { debug } = require('console');
 
 
 let public_dir = path.join(__dirname, 'public');
@@ -79,17 +80,18 @@ function callDatabase(query, params, res) {
             // Send error page as response if there is a SQL error
             if (err) {
                 display404Page(res)
+                console.log('check-1')
                 console.error(err)
                 reject(err)
                 return
             }
             if (rows === undefined || rows.length === 0) {
                 display404Page(res)
+                console.log('check-2')
                 console.error(err)
                 reject(`DB result is empty for query ${query}`)
                 return
             }
-
             resolve(rows)
         })
     })
@@ -197,6 +199,7 @@ app.get('/sector/:sector/annual/:year', (req, res) => {
                 .replace('%%Sector_Type%%', `${sector}`)
             res.status(200).type('html').send(response)
         })
+
     })
 })
 

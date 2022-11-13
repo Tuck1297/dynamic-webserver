@@ -64,14 +64,6 @@ p {
     height: 20px;
 }
 
-.error_center {
-    margin: auto;
-    padding: 20px;
-    background-color: rgba(120, 120, 120, 0.5);
-    border-radius: 10px;
-    margin: 10px;
-}
-
 .image_format {
     padding: 50px;
 }
@@ -132,6 +124,38 @@ p {
     border-style:double;
     border-width: 7px;
 }
+
+.err_image_display {
+    position: relative;
+    display: flex; 
+    justify-content: center;
+    align-items: center;  
+    padding: 20px;
+}
+
+#err_img_format {
+    border-radius: 50%;
+    border-style: double; 
+    border-width: 7px;
+    padding: 2px; 
+}
+
+.error_center {
+    margin: auto;
+    padding: 10px;
+    background-color: rgba(161, 161, 161, 0.9);
+    border-radius: 10px;
+    margin: 10px;
+    border-style:solid;
+    border-color: #BADA55 /*'s programmers are, Yoda said...*/
+}
+
+#err_box {
+    font-weight: bolder;
+}
+
+
+
 .gallery_format:hover .image_text_block {
     opacity: 100%;
     transition: opacity 1s;
