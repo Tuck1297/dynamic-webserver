@@ -579,6 +579,7 @@ app.get('/total_monthly/:month/:year', (req, res) => {
         2. make sure names are set to describe the graph
 */
 app.get('/javascript/total', (req, js_res) => {
+    console.log('check')
     fs.readFile(path.join(js_dir, 'total.js'), 'utf-8', (err, js_file) => {
         if (err) {
             js_res.status(404).type('js').send(`Error: ${err}`)
@@ -587,6 +588,11 @@ app.get('/javascript/total', (req, js_res) => {
 
         db.all(canvasQuery, canvasQueryParams, (err, rows) => {
             console.log(`rows: ${rows}`);
+            for(let data in rows[0]) {
+                if (rows[0][data] == '') {
+                    rows[0][data] = 0
+                }
+            }
             if (err) {
                 js_res.status(404).type('js').send(`Error: ${err}`)
                 return
@@ -601,10 +607,10 @@ app.get('/javascript/total', (req, js_res) => {
             let [month, year] = canvasQueryParams
             let rowEntries = Object.entries(rows[0])
 
-            console.log(`entries: ${rowEntries}`);
+            //console.log(`entries: ${rowEntries}`);
 
             let tableHeaders = rowEntries
-                .map( ([key, value]) => `<th>${key}</th>` )
+                .map( ([key, value]) => `<th>${capitalize(key)}</th>` )
                 .join('')
 
             let tableRows = rowEntries
@@ -614,14 +620,14 @@ app.get('/javascript/total', (req, js_res) => {
             let table = `<tr>${tableHeaders}</tr><tr>${tableRows}</tr>`
 
             let dataPoints = rowEntries
-                .map( ([key, value]) => `{ y: ${value}; label: ${key} }` )
+                .map( ([key, value]) => `{ y: ${parseFloat(value)}, label: "${capitalize(key)}" }` )
                 .join(', ')
             
             js_res.status(200).type('js').send(
                 js_file
                     .toString()
                     .replace('%%Graph_Data%%', dataPoints)
-                    .replace('%%Type_Data%%', format_data_2.slice(0, -1))
+                    .replace('%%Type_Data%%', table)
                     .replace('%%Title%%', `${month}, ${year}`)
                     .replace('%%Table_Html%%', table)
             )
