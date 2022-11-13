@@ -62,7 +62,7 @@ function readFile(file, res) {
         fs.readFile(file, (err, template) => {
             if (err) {
                 console.log(err)
-                display404Page(res)
+                display404Page(res, `Error: Internal problem!`)
                 return
             }
             else
@@ -76,16 +76,16 @@ function callDatabase(query, params, res) {
         db.all(query, params, (err, rows) => {
             // Send error page as response if there is a SQL error
             if (err) {
-                display404Page(res)
+                display404Page(res, `Error: no data for the following paramaters: ${params}`)
                 console.log('check-1')
                 console.error(err)
                 reject(err)
                 return
             }
             if (rows === undefined || rows.length === 0) {
-                display404Page(res)
+                display404Page(res, `Error: no data for the following parameters: ${params}`)
                 console.error(err)
-                reject(`DB result is empty for query ${query}`)
+                reject(`DB result is empty for query ${query}, ${params}`)
                 return
             }
             resolve(rows)
@@ -110,12 +110,10 @@ function checkBounds(year, month, dbType) {
             let [min_year, max_year] = [rows[0], rows[rows.length - 1]]
             //need to get first and last index here
             console.log(min_year.year, max_year.year, year)
-            
+
             if (year < min_year.year || year > max_year.year || year < min_year.Year || year > max_year.Year) {
-                
                 console.log(month)
                 if (months.includes(month) == false) {
-                    console.log('here???')
                     resolve(true)
                 }
                 resolve(true)
@@ -144,7 +142,7 @@ app.get('/homepage', (req, res) => {
     createPageFromDynamicTemplate('index.html', res, (page) => {
         // If there was an retrieval error -- redirect to 404 error page
         if (page.toString().slice(0, 5) == 'Error') {
-            display404Page(res)
+            display404Page(res, `Error: Internal problem!`)
             return
         }
 
@@ -198,10 +196,12 @@ app.get('/sector/:sector/annual/:year', (req, res) => {
     let sector = req.params.sector
     let year = req.params.year
 
+    sector = sector.slice(0, 1).toUpperCase() + sector.slice(1, sector.length)
+
     checkBounds(year, null, "AnnualSectorEnergy")
         .then((result) => {
             if (result == true) {
-                display404Page(res)
+                display404Page(res, `Error: no data for ${sector}/${year}`)
                 return
             }
 
@@ -307,13 +307,16 @@ app.get('/javascript/sector', (req, js_res) => {
 app.get('/sector/:sector/monthly/:month/:year', (req, res) => {
 
     let sector = req.params.sector
-    let year = req.params.year
+    let year = parseInt(req.params.year)
     let month = req.params.month
+
+    month = month.slice(0, 1).toUpperCase() + month.slice(1, month.length)
+    sector = sector.slice(0, 1).toUpperCase() + sector.slice(1, sector.length)
 
     checkBounds(year, month, "MonthlySectorEnergy")
         .then((result) => {
             if (result == true) {
-                display404Page(res)
+                display404Page(res, `Error: no data for ${month}/${year}`)
                 return
             }
 
@@ -331,11 +334,11 @@ app.get('/sector/:sector/monthly/:month/:year', (req, res) => {
         FROM Sector WHERE sector_name = ?`
                 db.all(query, [sector], (err, rows) => {
                     if (err) {
-                        display404Page(res)
+                        display404Page(res, `Error: no data for ${sector}/${month}/${year}`)
                         return
                     }
                     if (rows.length == 0) {
-                        display404Page(res)
+                        display404Page(res, `Error: no data for ${sector}/${month}/${year}`)
                         return
                     }
                     let response = page
@@ -364,6 +367,8 @@ app.get('/sector/:sector/monthly/:month/:year', (req, res) => {
 app.get('/state/:state', (req, res) => {
     let state = req.params.state
 
+    state = state.slice(0, 1).toUpperCase() + state.slice(1, state.length)
+
     canvasQuery = `SELECT * FROM StateEnergy2020 WHERE state = ?`
     canvasQueryParams = [state]
 
@@ -388,17 +393,17 @@ app.get('/state/:state', (req, res) => {
     // data = data + '</tr>'
     createPageFromDynamicTemplate('state.html', res, (page) => {
         if (page.toString().slice(0, 5) == 'Error') {
-            display404Page(res)
+            display404Page(res, `Error: no data for ${state}`)
             return
         }
         let query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
         db.all(query, [state], (err, rows) => {
             if (err) {
-                display404Page(res)
+                display404Page(res, `Error: no data for ${state}`)
                 return
             }
             if (rows.length === 0) {
-                display404Page(res)
+                display404Page(res, `Error: no data for ${state}`)
                 return
             }
             let header = ``
@@ -479,7 +484,7 @@ app.get('/javascript/state', (req, js_res) => {
             //let largest_val = Math.max(rows[0].slice(1, rows[0].length))
             // console.log(largest_val)
             let state = rows[0].state
-        
+
             let js_response = js_page
                 .toString()
                 .replace('%%Data_Placeholder%%', format_data.slice(0, -1))
@@ -507,64 +512,71 @@ app.get('/total_annual/:year', (req, res) => {
     checkBounds(year, null, "AnnualEnergy")
         .then((result) => {
             if (result == true) {
-                display404Page(res)
+                display404Page(res, `Error: no data for total_annual/${year}`)
                 return
             }
 
-    createPageFromDynamicTemplate('total.html', res, (page) => {
-        if (page.toString().slice(0, 5) == 'Error') {
-            display404Page(res)
-            return
-        }
-        // build table to display data here
-        /* Put Database call and updated dynamic page placeholders here 
-        1. %%Title_Placeholder%% --> Title (browser table title)
-        2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
-        3. %%route%% --> Is the javascript route '/javascript/total'
-        
-        */
-        let finalPage = page
-            .replace('%%route%%', `/javascript/total`)
-        res.status(200).type('html').send(finalPage)
-    })
-})
+            createPageFromDynamicTemplate('total.html', res, (page) => {
+                if (page.toString().slice(0, 5) == 'Error') {
+                    display404Page(res, `Error: no data for total_annual/${year}`)
+                    return
+                }
+                // build table to display data here
+                /* Put Database call and updated dynamic page placeholders here 
+                1. %%Title_Placeholder%% --> Title (browser table title)
+                2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
+                3. %%route%% --> Is the javascript route '/javascript/total'
+                
+                */
+                let finalPage = page
+                    .replace('%%route%%', `/javascript/total`)
+                res.status(200).type('html').send(finalPage)
+            })
+        })
 })
 
 // Dynamic path for Total Monthly Data
 app.get('/total_monthly/:month/:year', (req, res) => {
-    let monthID = getMonthID(req.params.month)
+    let month = req.params.month
+    month = month.slice(0,1).toUpperCase()+month.slice(1,month.length)
+
+    let monthID = getMonthID(month)
     let year = parseInt(req.params.year)
+    console.log(monthID)
 
-    //If our result is true then we are not in bounds
-    if (checkBounds('Monthly', year, monthID, "MonthlyEnergy", res) == true) {
-        return
-    }
-    let tableQuery = `SELECT * FROM MonthlyEnergy WHERE month_id = ? AND year = ?`
+    checkBounds(year, month, "MonthlyEnergy")
+        .then((result) => {
+            if (result == true) {
+                display404Page(res, `Error: no data for total_monthly/${month}/${year}`)
+                return
+            }
 
-    canvasQuery = `SELECT * from Sector`
-    canvasQueryParams = [year, monthID]
+            let tableQuery = `SELECT * FROM MonthlyEnergy WHERE month_id = ? AND year = ?`
 
-    callDatabase(tableQuery, [monthID, year], res)
-        .then((rows) => {
+            canvasQuery = `SELECT * from Sector`
+            canvasQueryParams = [year, monthID]
 
-            /* Put Database call and updated dynamic page placeholders here 
-            1. %%Title_Placeholder%% --> Title (browser table title)
-            2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
-            3. %%route%% --> Is the javascript route '/javascript/total'
-            */
+            callDatabase(tableQuery, [monthID, year], res)
+                .then((rows) => {
 
-            createPageFromDynamicTemplate('total_monthly.html', res, (page) => {
-                res.status(200).type('html').send(
-                    page.replace('%%Placeholder_Test%%', rows.map((r) => r.coal))
-                        .replace('%%route%%', `/javascript/total`)
-                )
-            })
-        })
-        .catch((err) => {
-            console.error(err)
+                    /* Put Database call and updated dynamic page placeholders here 
+                    1. %%Title_Placeholder%% --> Title (browser table title)
+                    2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
+                    3. %%route%% --> Is the javascript route '/javascript/total'
+                    */
+
+                    createPageFromDynamicTemplate('total_monthly.html', res, (page) => {
+                        res.status(200).type('html').send(
+                            page.replace('%%Placeholder_Test%%', rows.map((r) => r.coal))
+                                .replace('%%route%%', `/javascript/total`)
+                        )
+                    })
+                })
+                .catch((err) => {
+                    console.error(err)
+                })
         })
 })
-
 /* Request for the javascript file -- will only be called from the 
     total annually and total monthly requests.  
     TODO: 
@@ -603,13 +615,13 @@ function createPageFromDynamicTemplate(contentFileName, res, onContentInserted) 
 
     fs.readFile(contentPath, (err, content) => {
         if (err) {
-            display404Page(res)
+            display404Page(res, `Error: internal problem!`)
             console.error(err)
             return
         }
         fs.readFile(templatePath, 'utf-8', (err, template) => {
             if (err) {
-                display404Page(res)
+                display404Page(res, `Error: internal problem!`)
                 console.error(err)
                 return
             }
@@ -677,12 +689,15 @@ function populateNavigation(template, res, callback) {
         })
 }
 
-function display404Page(res) {
+function display404Page(res, message) {
     fs.readFile(path.join(template_dir, 'file_not_found.html'), (err, template) => {
         if (err) {
-            res.status(404).type('text').send('Please check your request and try again...')
+            res.status(404).type('text').send(`${message} ~ Please check your request and try again...`)
         } else {
-            res.status(404).type('html').send(template)
+            let response = template
+                .toString()
+                .replace('%%err_page_placeholder%%', message)
+            res.status(404).type('html').send(response)
         }
     })
 }
