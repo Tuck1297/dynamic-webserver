@@ -1,13 +1,13 @@
 
-let graph_data = [%%Data_Placeholder%%]
+let graph_data = [%%Graph_Data%%]
 let table = document.getElementById('table')
-table.innerHTML = '%%table_data%%'
+table.innerHTML = '%%Table_Html%%'
 
 var chart = new CanvasJS.Chart("chartContainer", {
     animationEnabled: true,
     
     title:{
-        text:"%%Month_Year%%"
+        text:"%%Title%%"
     },
     axisX:{
         interval: 1
