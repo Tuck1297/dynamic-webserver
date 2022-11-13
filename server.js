@@ -598,7 +598,8 @@ app.get('/javascript/total', (req, js_res) => {
                 return
             }
 
-            let [month, year] = canvasQueryParams
+            let [monthID, year] = canvasQueryParams
+            let month = months[monthID]
             let rowEntries = Object.entries(rows[0])
 
             console.log(`entries: ${rowEntries}`);
@@ -621,7 +622,6 @@ app.get('/javascript/total', (req, js_res) => {
                 js_file
                     .toString()
                     .replace('%%Graph_Data%%', dataPoints)
-                    .replace('%%Type_Data%%', format_data_2.slice(0, -1))
                     .replace('%%Title%%', `${month}, ${year}`)
                     .replace('%%Table_Html%%', table)
             )
