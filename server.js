@@ -25,6 +25,21 @@ let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
     }
 });
 
+let states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
+    , 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii'
+    , 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana'
+    , 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi'
+    , 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey'
+    , 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma'
+    , 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota'
+    , 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington'
+    , 'West Virginia', 'Wisconsin', 'Wyoming']
+
+let months = ['January', 'Feburary', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December']
+
+
+
 // Serve static files from 'public' directory
 app.use(express.static(public_dir));
 
@@ -51,16 +66,23 @@ function readFile(file, res) {
     })
 }
 /* Executes the input query -- redirects to 404 error page if not found */
-function callDatabase(query, res) {
+function callDatabase(query, params, res) {
     return new Promise((resolve, reject) => {
-        db.all(query, [], (err, rows) => {
+        db.all(query, params, (err, rows) => {
             // Send error page as response if there is a SQL error
             if (err) {
                 display404Page(res)
+                console.error(err)
+                reject(err)
                 return
             }
-            else 
-                resolve(rows)
+            if (rows === undefined || rows.length === 0) {
+                display404Page(res)
+                console.error(err)
+                reject(`DB result is empty for query ${query}`)
+                return
+            }
+            resolve(rows)
         })
     })
 }
@@ -73,13 +95,13 @@ app.get('/homepage', (req, res) => {
     let query_2 = `SELECT year, total_primary from AnnualEnergy`    
     let query_3 = `SELECT State, ethenol FROM StateEnergy2020 WHERE State != "United States"`
     const promises = [
-        callDatabase(query_1, res), 
-        callDatabase(query_2, res), 
-        callDatabase(query_3, res),
+        callDatabase(query_1, [], res), 
+        callDatabase(query_2, [], res), 
+        callDatabase(query_3, [], res),
         readFile(path.join(js_dir, 'script.js'), res),
     ]
 
-    createPageFromDynamicTemplate('index.html', (page) => {
+    createPageFromDynamicTemplate('index.html', res, (page) => {
         // If there was an retrieval error -- redirect to 404 error page
         if (page.toString().slice(0,5) == 'Error') {
             display404Page(res)
@@ -122,7 +144,7 @@ app.get('/:sector/annual/:year', (req, res) => {
     let sector = req.params.sector
     let year = req.params.year
 
-    createPageFromDynamicTemplate('sector.html', (page) => {
+    createPageFromDynamicTemplate('sector.html', res, (page) => {
         // If there was an retrieval error -- redirect to 404 error page
         if (page.toString().slice(0,5) == 'Error') {
             display404Page(res)
@@ -227,7 +249,7 @@ app.get('/state/:state', (req, res) => {
     data = data + '<th>Biodiesel</th>'
     data = data + '<th>Ethenol</th>'
     data = data + '</tr>'
-    createPageFromDynamicTemplate('state.html', (page) => {
+    createPageFromDynamicTemplate('state.html', res, (page) => {
         let query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
         db.all(query, [state], (err, rows) => {
             //Initializing
@@ -270,112 +292,112 @@ app.get('/state/:state', (req, res) => {
 app.get('/total_annual/:year', (req, res) => {
     let year = req.params.year
 
-    createPageFromDynamicTemplate('total_annual.html', (page) => {
+    createPageFromDynamicTemplate('total_annual.html', res, (page) => {
         res.status(200).type('html').send(page)
     })
 })
 
 // Dynamic path for Total Monthly Data
-app.get('/total_monthly/:month_id/:year', (req, res) => {
-    let monthID = req.params.month
-    let year = req.params.year
+app.get('/total_monthly/:month/:year', (req, res) => {
+    let monthID = getMonthID(req.params.month)
+    let year = parseInt(req.params.year)
+    let tableQuery = `SELECT * FROM MonthlyEnergy WHERE month_id = ? AND year = ?`
 
-    createPageFromDynamicTemplate('total_monthly.html', (page) => {        
-        let query = `SELECT coal FROM MonthlyEnergy WHERE year = ?`
+    callDatabase(tableQuery, [monthID, year], res)
+    .then((rows) => {
+        console.log(rows)
 
-        db.all(query, [year], (err, rows) => {
-            let coalConsumption = rows.map((row) => row.coal)
-            console.log(coalConsumption)
-            let finalPage = page.replace('%%Placeholder_Test%%', coalConsumption)
-
-            res.status(200).type('html').send(finalPage)
+        createPageFromDynamicTemplate('total_monthly.html', res, (page) => {        
+            res.status(200).type('html').send(
+                page.replace('%%Placeholder_Test%%', rows.map((r) => r.coal))
+            )
         })
     })
-
+    .catch((err) => {
+        console.error(err)
+    })
 })
 
-let states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
-    , 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii'
-    , 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana'
-    , 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi'
-    , 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey'
-    , 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma'
-    , 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota'
-    , 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington'
-    , 'West Virginia', 'Wisconsin', 'Wyoming']
 
-let months = ['January', 'Feburary', 'March', 'April', 'May', 'June', 'July',
-    'August', 'September', 'October', 'November', 'December']
 
-function createPageFromDynamicTemplate(contentFileName, onContentInserted) {
+function createPageFromDynamicTemplate(contentFileName, res, onContentInserted) {
     let contentPath = path.join(template_dir, contentFileName)
     let templatePath = path.join(template_dir, 'dynamic_route_template.html')
     
     fs.readFile(contentPath, (err, content) => {
         if (err) {
-            onContentInserted(err)
+            display404Page(res)
+            console.error(err)
+            return
         }
 
         fs.readFile(templatePath, 'utf-8', (err, template) => {
             if (err) {
-                onContentInserted(err)
-            } else {
-                populateNavigation(template, (navigationTemplate) => {
-                    let page = navigationTemplate.replace('%%Placeholder_Content%%', content)
-                    onContentInserted(page)
-                })
+                display404Page(res)
+                console.error(err)
+                return
             }
+
+            populateNavigation(template, res, (navigationTemplate) => {
+                let page = navigationTemplate.replace('%%Placeholder_Content%%', content)
+                onContentInserted(page)
+            })
         })
     }) 
 }
 
 /* Builds the navigation path for all dynamic pages */
-function populateNavigation(template, callback) {
-    let query1 = `SELECT year FROM AnnualSectorEnergy WHERE sector_id=1;`
-    let query2 = `SELECT sector_name FROM Sector;`
+function populateNavigation(template, res, callback) {
+    let annualYearsQuery = `SELECT DISTINCT year FROM AnnualSectorEnergy ORDER BY year`
+    let monthlyYearsQuery = `SELECT DISTINCT year FROM MonthlyEnergy ORDER BY year`    
+    let sectorNamesQuery = `SELECT sector_name FROM Sector;`
+    
+    // callDatabase() will perform a 404 redirect, so no need to do that here.
+    Promise.all([
+        callDatabase(annualYearsQuery, [], res),
+        callDatabase(monthlyYearsQuery, [], res),
+        callDatabase(sectorNamesQuery, [], res)
+    ]).then((results) => {
+        let [annualYears, monthlyYears, sectorNames] = results
+        monthlyYears = monthlyYears.map((r) => r.year)
+        annualYears = annualYears.map((r) => r.year)
+        sectorNames = sectorNames.map((r) => r.sector_name)
 
-    db.all(query1, [], (dbError, query_1_rows) => {
-        if (dbError) {
-            display404Page()
-            return
-        }
-        db.all(query2, [], (err, query_2_rows) => {
-            let years = query_1_rows.map((row) => row.year)
-            let sectorNames = query_2_rows.map((row) => row.sector_name)
+        // Populate Client Navigation
+        let sectorMonthlyPlaceholder = 
+            createDoublyNestedListElements(sectorNames, months, monthlyYears, (sn, m, y) => 
+                `<a href=/${sn}/monthly/${m}/${y}>${y}</a>`
+            )
+        let sectorAnnualPlaceholder = 
+            createNestedListElements(sectorNames, annualYears, (sn, y) =>
+                `<a href="/${sn}/annual/${y}">${y}</a>`
+            )
+        let annualPlaceholder = 
+            createListElements(annualYears, (y) => 
+                `<a href="/total/annual/${y}">${y}</a>`
+            )
+        let monthPlaceholder = 
+            createNestedListElements(months, monthlyYears, (m, y) => 
+                `<a href="/total_monthly/${m}/${y}">${y}</a>`
+            )
+        let statePlaceholder = 
+            createListElements(states, (s) => 
+                `<a href="/state/${s}">${s}</a>`
+            )
 
-            // Populate Client Navigation
-            let sectorMonthlyPlaceholder = 
-                createDoublyNestedListElements(sectorNames, months, years, (sn, m, y) => 
-                    `<a href=/${sn}/monthly/${m}/${y}>${y}</a>`
-                )
-            let sectorAnnualPlaceholder = 
-                createNestedListElements(sectorNames, years, (sn, y) =>
-                    `<a href="/${sn}/annual/${y}">${y}</a>`
-                )
-            let annualPlaceholder = 
-                createListElements(years, (y) => 
-                    `<a href="/total/annual/${y}">${y}</a>`
-                )
-            let monthPlaceholder = 
-                createNestedListElements(months, years, (m, y) => 
-                    `<a href="/total_monthly/${m}/${y}">${y}</a>`
-                )
-            let statePlaceholder = 
-                createListElements(states, (s) => 
-                    `<a href="/state/${s}">${s}</a>`
-                )
+        // Replace string placeholders
+        let response = template
+            .toString()
+            .replace('%%List_Placeholder_Total_Year%%', annualPlaceholder)
+            .replace('%%List_Placeholder_Sector_Annual%%', sectorAnnualPlaceholder)
+            .replace('%%List_Placeholder_Total_Month%%', monthPlaceholder)
+            .replace('%%List_Placeholder_Sector_Monthly%%', sectorMonthlyPlaceholder)
+            .replace('%%List_Placeholder_State%%', statePlaceholder)
 
-            // Replace string placeholders
-            let response = template
-                .toString()
-                .replace('%%List_Placeholder_Total_Year%%', annualPlaceholder)
-                .replace('%%List_Placeholder_Sector_Annual%%', sectorAnnualPlaceholder)
-                .replace('%%List_Placeholder_Total_Month%%', monthPlaceholder)
-                .replace('%%List_Placeholder_Sector_Monthly%%', sectorMonthlyPlaceholder)
-                .replace('%%List_Placeholder_State%%', statePlaceholder)
-
-            callback(response)
-        })
+        callback(response)
+    })
+    .catch((err) => {
+        console.error(err)
     })
 }
 
@@ -383,9 +405,9 @@ function display404Page(res) {
     fs.readFile(path.join(template_dir, 'file_not_found.html'), (err, template) => {
         if (err) {
             res.status(404).type('text').send('Please check your request and try again...')
-            return
+        } else {
+            res.status(404).type('html').send(template)            
         }
-        res.status(404).type('html').send(template)            
     })
 }
 
@@ -435,7 +457,11 @@ function createListElement(content) {
     return `<li>${content}</li>`
 }
 
-
+function getMonthID(month) {
+    return months
+            .map((m) => m.toLowerCase())
+            .indexOf(month.toLowerCase()) + 1
+}
 
 /*
 // Example GET request handler for data about a specific year
