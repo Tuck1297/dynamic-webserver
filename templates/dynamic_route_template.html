@@ -214,9 +214,19 @@
 
         function createYearList() {
             let array = []
-            for (let i = 1949; i < 2022; i++) {
-                array.push(i)
+            let currentURL = window.location.href.toString()
+            // 1949 --> 2021 for Sector
+            // 1973 --> 2022 for Total
+            if (currentURL.includes("monthly")) {
+                for (let i = 1973; i < 2023; i++) {
+                    array.push(i)
+                }
+            } else {
+                for (let i = 1949; i < 2022; i++) {
+                    array.push(i)
+                }
             }
+            console.log(currentURL)
             return array
         }
         function changeParameter(dataIndex, dataSet) {

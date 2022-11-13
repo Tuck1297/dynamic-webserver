@@ -20,9 +20,6 @@ let homeGlobalData = []
 let canvasQueryParams = []
 let canvasQuery = `SELECT * from AnnualSectorEnergy`
 
-let min_year = 1949
-let max_year = 2021
-
 let states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
     , 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii'
     , 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana'
@@ -87,7 +84,6 @@ function callDatabase(query, params, res) {
             }
             if (rows === undefined || rows.length === 0) {
                 display404Page(res)
-                console.log('check-2')
                 console.error(err)
                 reject(`DB result is empty for query ${query}`)
                 return
@@ -96,17 +92,51 @@ function callDatabase(query, params, res) {
         })
     })
 }
+// dbType will either be AnnualEnergy or MonthlyEnergy
+//AnnualEnergy or MonthlyEnergy
+function checkBounds(year, month, dbType) {
+    return new Promise((resolve, reject) => {
+        console.log(Number.isInteger(parseInt(year)))
+        if (Number.isInteger(parseInt(year)) == false) {
+            resolve(true)
+        }
+        db.all(`SELECT DISTINCT year from ${dbType}`, [], (err, rows) => {
+            if (err) {
+                console.log(err)
+                reject(err)
+                return
+            }
+            console.log(rows[0])
+            let [min_year, max_year] = [rows[0], rows[rows.length - 1]]
+            //need to get first and last index here
+            console.log(min_year.year, max_year.year, year)
+            
+            if (year < min_year.year || year > max_year.year || year < min_year.Year || year > max_year.Year) {
+                
+                console.log(month)
+                if (months.includes(month) == false) {
+                    console.log('here???')
+                    resolve(true)
+                }
+                resolve(true)
+            } else if (months.includes(month) == false && month != null) {
+                resolve(true)
+            }
+            resolve(false)
+        })
+    })
+}
 
 // Dynamic File path for homepage --> index.html
 app.get('/homepage', (req, res) => {
 
     let query_1 = `SELECT sector.sector_name, sum(total) as sum FROM AnnualSectorEnergy JOIN Sector WHERE 
-        Sector.sector_id=AnnualSectorEnergy.sector_id AND year=2021 GROUP BY Sector.sector_name`    
-    let query_2 = `SELECT year, total_primary from AnnualEnergy`    
+        Sector.sector_id=AnnualSectorEnergy.sector_id AND year=2021 GROUP BY Sector.sector_name`
+    let query_2 = `SELECT year, total_primary from AnnualEnergy`
     let query_3 = `SELECT State, ethenol FROM StateEnergy2020 WHERE State != "United States"`
     const promises = [
-        callDatabase(query_1, [], res), 
-        callDatabase(query_2, [], res), 
+        callDatabase(query_1, [], res),
+        callDatabase(query_2, [], res),
         callDatabase(query_3, [], res),
         readFile(path.join(js_dir, 'script.js'), res),
     ]
@@ -168,37 +198,48 @@ app.get('/sector/:sector/annual/:year', (req, res) => {
     let sector = req.params.sector
     let year = req.params.year
 
-    canvasQuery =
-        `SELECT total, biomass, waste, ethenol, wood, hydro_electric, geothermal, solar, wind,  
+    checkBounds(year, null, "AnnualSectorEnergy")
+        .then((result) => {
+            if (result == true) {
+                display404Page(res)
+                return
+            }
+
+
+            canvasQuery =
+                `SELECT total, biomass, waste, ethenol, wood, hydro_electric, geothermal, solar, wind,  
         biodiesel, renewable_diesel, other_biodiesel FROM AnnualSectorEnergy join Sector on AnnualSectorEnergy.sector_id=
         Sector.sector_id WHERE Sector.sector_name = ? AND AnnualSectorEnergy.year = ?`
-    canvasQueryParams = [sector, year]
+            canvasQueryParams = [sector, year]
 
-    createPageFromDynamicTemplate('sector.html', res, (page) => {
-        let query = `SELECT Image_1_ALT AS Img1, Image_2_ALT AS Img2, Image_3_ALT AS Img3 
+            createPageFromDynamicTemplate('sector.html', res, (page) => {
+                let query = `SELECT Image_1_ALT AS Img1, Image_2_ALT AS Img2, Image_3_ALT AS Img3 
         FROM Sector WHERE sector_name = ?`
-        callDatabase(query, [sector], res)
-        .then((rows)=> {
-            // console.log(rows[0].Img1, rows[0].Img2, rows[0].Img3)
-            let response = page
-                .toString()
-                .replace('%%Title_Placeholder%%', `${sector}:${year}`)
-                .replace('%%route%%', '/javascript/sector')
-                .replace('%%Sector_Title_Placeholder%%', `${sector}:${year}`)
-                .replace('%%Image_Placeholder_1%%', `/images/${sector}_1.jpg`)
-                .replace('%%Image_Placeholder_2%%', `/images/${sector}_2.jpg`)
-                .replace('%%Image_Placeholder_3%%', `/images/${sector}_3.jpg`)
-                .replace('%%Image_Descriptor_1%%', `${rows[0].Img1}`)
-                .replace('%%Image_Descriptor_1%%', `${rows[0].Img1}`)
-                .replace('%%Image_Descriptor_2%%', `${rows[0].Img2}`)
-                .replace('%%Image_Descriptor_2%%', `${rows[0].Img2}`)
-                .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
-                .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
-                .replace('%%Sector_Type%%', `${sector}`)
-            res.status(200).type('html').send(response)
+                callDatabase(query, [sector], res)
+                    .then((rows) => {
+                        // console.log(rows[0].Img1, rows[0].Img2, rows[0].Img3)
+                        let response = page
+                            .toString()
+                            .replace('%%Title_Placeholder%%', `${sector}:${year}`)
+                            .replace('%%route%%', '/javascript/sector')
+                            .replace('%%Sector_Title_Placeholder%%', `${sector}:${year}`)
+                            .replace('%%Image_Placeholder_1%%', `/images/${sector}_1.jpg`)
+                            .replace('%%Image_Placeholder_2%%', `/images/${sector}_2.jpg`)
+                            .replace('%%Image_Placeholder_3%%', `/images/${sector}_3.jpg`)
+                            .replace('%%Image_Descriptor_1%%', `${rows[0].Img1}`)
+                            .replace('%%Image_Descriptor_1%%', `${rows[0].Img1}`)
+                            .replace('%%Image_Descriptor_2%%', `${rows[0].Img2}`)
+                            .replace('%%Image_Descriptor_2%%', `${rows[0].Img2}`)
+                            .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
+                            .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
+                            .replace('%%Sector_Type%%', `${sector}`)
+                        res.status(200).type('html').send(response)
+                    }).catch((err) => {
+                        // display404Page function is called in callDatabase
+                        console.log(err)
+                    })
+            })
         })
-
-    })
 })
 
 app.get('/javascript/sector', (req, js_res) => {
@@ -269,52 +310,60 @@ app.get('/sector/:sector/monthly/:month/:year', (req, res) => {
     let year = req.params.year
     let month = req.params.month
 
-    canvasQuery =
-        `SELECT total, biomass, waste, ethenol, wood, hydro_electric, geothermal, solar, wind,
+    checkBounds(year, month, "MonthlySectorEnergy")
+        .then((result) => {
+            if (result == true) {
+                display404Page(res)
+                return
+            }
+
+            canvasQuery =
+                `SELECT total, biomass, waste, ethenol, wood, hydro_electric, geothermal, solar, wind,
            biodiesel, renewable_diesel, other_biodiesel FROM MonthlySectorEnergy JOIN Sector ON MonthlySectorEnergy.sector_id=
            Sector.sector_id JOIN Month ON Month.month_id=MonthlySectorEnergy.month_id
            WHERE Sector.sector_name = ? AND MonthlySectorEnergy.year = ? AND Month.month = ?`
-    canvasQueryParams = [sector, year, month]
+            canvasQueryParams = [sector, year, month]
 
-    createPageFromDynamicTemplate('sector.html', res, (page) => {
-        // If there was an retrieval error -- redirect to 404 error page
-        
-        let query = `SELECT Image_1_ALT AS Img1, Image_2_ALT AS Img2, Image_3_ALT AS Img3 
+            createPageFromDynamicTemplate('sector.html', res, (page) => {
+                // If there was an retrieval error -- redirect to 404 error page
+
+                let query = `SELECT Image_1_ALT AS Img1, Image_2_ALT AS Img2, Image_3_ALT AS Img3 
         FROM Sector WHERE sector_name = ?`
-        db.all(query, [sector], (err, rows) => {
-            if (err) {
-                display404Page(res)
-                return
-            }
-            if (rows.length == 0) {
-                display404Page(res)
-                return
-            }
-            let response = page
-                .toString()
-                .replace('%%Title_Placeholder%%', `${sector}:${month}:${year}`)
-                .replace('%%route%%', '/javascript/sector')
-                .replace('%%Sector_Title_Placeholder%%', `${sector}:${month}:${year}`)
-                .replace('%%Image_Placeholder_1%%', `/images/${sector}_1.jpg`)
-                .replace('%%Image_Placeholder_2%%', `/images/${sector}_2.jpg`)
-                .replace('%%Image_Placeholder_3%%', `/images/${sector}_3.jpg`)
-                .replace('%%Image_Descriptor_1%%', `${rows[0].Img1}`)
-                .replace('%%Image_Descriptor_1%%', `${rows[0].Img1}`)
-                .replace('%%Image_Descriptor_2%%', `${rows[0].Img2}`)
-                .replace('%%Image_Descriptor_2%%', `${rows[0].Img2}`)
-                .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
-                .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
-                .replace('%%Sector_Type%%', `${sector}`)
-            res.status(200).type('html').send(response)
+                db.all(query, [sector], (err, rows) => {
+                    if (err) {
+                        display404Page(res)
+                        return
+                    }
+                    if (rows.length == 0) {
+                        display404Page(res)
+                        return
+                    }
+                    let response = page
+                        .toString()
+                        .replace('%%Title_Placeholder%%', `${sector}:${month}:${year}`)
+                        .replace('%%route%%', '/javascript/sector')
+                        .replace('%%Sector_Title_Placeholder%%', `${sector}:${month}:${year}`)
+                        .replace('%%Image_Placeholder_1%%', `/images/${sector}_1.jpg`)
+                        .replace('%%Image_Placeholder_2%%', `/images/${sector}_2.jpg`)
+                        .replace('%%Image_Placeholder_3%%', `/images/${sector}_3.jpg`)
+                        .replace('%%Image_Descriptor_1%%', `${rows[0].Img1}`)
+                        .replace('%%Image_Descriptor_1%%', `${rows[0].Img1}`)
+                        .replace('%%Image_Descriptor_2%%', `${rows[0].Img2}`)
+                        .replace('%%Image_Descriptor_2%%', `${rows[0].Img2}`)
+                        .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
+                        .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
+                        .replace('%%Sector_Type%%', `${sector}`)
+                    res.status(200).type('html').send(response)
+                })
+            })
         })
-    })
 })
 
 // Dynamic path for State Data
 
 app.get('/state/:state', (req, res) => {
     let state = req.params.state
-    
+
     canvasQuery = `SELECT * FROM StateEnergy2020 WHERE state = ?`
     canvasQueryParams = [state]
 
@@ -447,14 +496,17 @@ app.get('/javascript/state', (req, js_res) => {
 // Dynamic path for Total Annual Data
 app.get('/total_annual/:year', (req, res) => {
     let year = req.params.year
-   
+
     canvasQuery = `SELECT * FROM Sector` // Query to retrieve data that will populate javascript graph
     canvasQueryParams = [year]
 
     /* Will send 404 error page if year is outside the bounds defined for this dataset */
-    if (isInYearBounds(year, res) == true) {
-        return
-    }
+    checkBounds(year, null, "AnnualEnergy")
+        .then((result) => {
+            if (result == true) {
+                display404Page(res)
+                return
+            }
 
     createPageFromDynamicTemplate('total.html', res, (page) => {
         if (page.toString().slice(0, 5) == 'Error') {
@@ -469,39 +521,45 @@ app.get('/total_annual/:year', (req, res) => {
         
         */
         let finalPage = page
-        .replace('%%route%%', `/javascript/total`)
+            .replace('%%route%%', `/javascript/total`)
         res.status(200).type('html').send(finalPage)
     })
+})
 })
 
 // Dynamic path for Total Monthly Data
 app.get('/total_monthly/:month/:year', (req, res) => {
     let monthID = getMonthID(req.params.month)
     let year = parseInt(req.params.year)
+
+    //If our result is true then we are not in bounds
+    if (checkBounds('Monthly', year, monthID, "MonthlyEnergy", res) == true) {
+        return
+    }
     let tableQuery = `SELECT * FROM MonthlyEnergy WHERE month_id = ? AND year = ?`
 
     canvasQuery = `SELECT * from Sector`
     canvasQueryParams = [year, monthID]
 
     callDatabase(tableQuery, [monthID, year], res)
-    .then((rows) => {
-     
-        /* Put Database call and updated dynamic page placeholders here 
-        1. %%Title_Placeholder%% --> Title (browser table title)
-        2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
-        3. %%route%% --> Is the javascript route '/javascript/total'
-        */
+        .then((rows) => {
 
-        createPageFromDynamicTemplate('total_monthly.html', res, (page) => {        
-            res.status(200).type('html').send(
-                page.replace('%%Placeholder_Test%%', rows.map((r) => r.coal))
-                    .replace('%%route%%', `/javascript/total`)
-            )
+            /* Put Database call and updated dynamic page placeholders here 
+            1. %%Title_Placeholder%% --> Title (browser table title)
+            2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
+            3. %%route%% --> Is the javascript route '/javascript/total'
+            */
+
+            createPageFromDynamicTemplate('total_monthly.html', res, (page) => {
+                res.status(200).type('html').send(
+                    page.replace('%%Placeholder_Test%%', rows.map((r) => r.coal))
+                        .replace('%%route%%', `/javascript/total`)
+                )
+            })
         })
-    })
-    .catch((err) => {
-        console.error(err)
-    })
+        .catch((err) => {
+            console.error(err)
+        })
 })
 
 /* Request for the javascript file -- will only be called from the 
@@ -564,9 +622,9 @@ function createPageFromDynamicTemplate(contentFileName, res, onContentInserted) 
 /* Builds the navigation path for all dynamic pages */
 function populateNavigation(template, res, callback) {
     let annualYearsQuery = `SELECT DISTINCT year FROM AnnualSectorEnergy ORDER BY year`
-    let monthlyYearsQuery = `SELECT DISTINCT year FROM MonthlyEnergy ORDER BY year`    
+    let monthlyYearsQuery = `SELECT DISTINCT year FROM MonthlyEnergy ORDER BY year`
     let sectorNamesQuery = `SELECT sector_name FROM Sector;`
-    
+
     // callDatabase() will perform a 404 redirect, so no need to do that here.
     Promise.all([
         callDatabase(annualYearsQuery, [], res),
@@ -579,24 +637,24 @@ function populateNavigation(template, res, callback) {
         sectorNames = sectorNames.map((r) => r.sector_name)
 
         // Populate Client Navigation
-        let sectorMonthlyPlaceholder = 
-            createDoublyNestedListElements(sectorNames, months, monthlyYears, (sn, m, y) => 
+        let sectorMonthlyPlaceholder =
+            createDoublyNestedListElements(sectorNames, months, monthlyYears, (sn, m, y) =>
                 `<a href=/sector/${sn}/monthly/${m}/${y}>${y}</a>`
             )
-        let sectorAnnualPlaceholder = 
+        let sectorAnnualPlaceholder =
             createNestedListElements(sectorNames, annualYears, (sn, y) =>
                 `<a href="/sector/${sn}/annual/${y}">${y}</a>`
             )
-        let annualPlaceholder = 
-            createListElements(annualYears, (y) => 
+        let annualPlaceholder =
+            createListElements(annualYears, (y) =>
                 `<a href="/total_annual/${y}">${y}</a>`
             )
-        let monthPlaceholder = 
-            createNestedListElements(months, monthlyYears, (m, y) => 
+        let monthPlaceholder =
+            createNestedListElements(months, monthlyYears, (m, y) =>
                 `<a href="/total_monthly/${m}/${y}">${y}</a>`
             )
-        let statePlaceholder = 
-            createListElements(states, (s) => 
+        let statePlaceholder =
+            createListElements(states, (s) =>
                 `<a href="/state/${s}">${s}</a>`
             )
 
@@ -611,9 +669,9 @@ function populateNavigation(template, res, callback) {
 
         callback(response)
     })
-    .catch((err) => {
-        console.error(err)
-    })
+        .catch((err) => {
+            console.error(err)
+        })
 }
 
 function display404Page(res) {
@@ -621,27 +679,12 @@ function display404Page(res) {
         if (err) {
             res.status(404).type('text').send('Please check your request and try again...')
         } else {
-            res.status(404).type('html').send(template)            
+            res.status(404).type('html').send(template)
         }
     })
 }
 
-/* Will redirect to error page if year is outside the bounds defined for the used dataset */
-function isInYearBounds(year, res) {
-    if (year < min_year || year > max_year) {
-        display404Page(res)
-        return true
-    }
-    return false
-}
 
-function isInMonthBounds(month, res) {
-    if (months.includes(month) == false) {
-        display404Page(res)
-        return true
-    }
-    return false
-}
 
 function createDoublyNestedListElements(grandparentList, parentList, childList, childTransform) {
     let elements = []
@@ -691,8 +734,8 @@ function createListElement(content) {
 
 function getMonthID(month) {
     return months
-            .map((m) => m.toLowerCase())
-            .indexOf(month.toLowerCase()) + 1
+        .map((m) => m.toLowerCase())
+        .indexOf(month.toLowerCase()) + 1
 }
 
 /*
