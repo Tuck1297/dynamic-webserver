@@ -15,9 +15,9 @@ let js_dir = path.join(__dirname, 'public/js');
 let app = express();
 let port = 8000;
 
-let globalQueryConstraints = []
 let homeGlobalData = []
-let js_data_query = `SELECT * from AnnualSectorEnergy`
+let canvasQueryParams = []
+let canvasQuery = `SELECT * from AnnualSectorEnergy`
 
 let min_year = 1949
 let max_year = 2021
@@ -166,13 +166,11 @@ app.get('/sector/:sector/annual/:year', (req, res) => {
     let sector = req.params.sector
     let year = req.params.year
 
-    globalQueryConstraints = []
-    globalQueryConstraints.push(sector)
-    globalQueryConstraints.push(year)
-    js_data_query =
+    canvasQuery =
         `SELECT total, biomass, waste, ethenol, wood, hydro_electric, geothermal, solar, wind,  
         biodiesel, renewable_diesel, other_biodiesel FROM AnnualSectorEnergy join Sector on AnnualSectorEnergy.sector_id=
         Sector.sector_id WHERE Sector.sector_name = ? AND AnnualSectorEnergy.year = ?`
+    canvasQueryParams = [sector, year]
 
     createPageFromDynamicTemplate('sector.html', res, (page) => {
         let query = `SELECT Image_1_ALT AS Img1, Image_2_ALT AS Img2, Image_3_ALT AS Img3 
@@ -206,7 +204,7 @@ app.get('/javascript/sector', (req, js_res) => {
             js_res.status(404).type('js').send(`Error: ${err}`)
             return
         }
-        db.all(js_data_query, globalQueryConstraints, (err, rows) => {
+        db.all(canvasQuery, canvasQueryParams, (err, rows) => {
             if (err) {
                 js_res.status(404).type('js').send(`Error: ${err}`)
                 return
@@ -253,7 +251,7 @@ app.get('/javascript/sector', (req, js_res) => {
                 .toString()
                 .replace('%%Data_Placeholder%%', format_data.slice(0, -1))
                 .replace('%%Data_Placeholder_2%%', format_data_2.slice(0, -1))
-                .replace('%%Sector%%', `${globalQueryConstraints[0]} Sector`)
+                .replace('%%Sector%%', `${canvasQueryParams[0]} Sector`)
                 .replace('%%table_data%%', table)
             js_res.status(200).type('js').send(js_response)
         })
@@ -268,31 +266,16 @@ app.get('/sector/:sector/monthly/:month/:year', (req, res) => {
     let year = req.params.year
     let month = req.params.month
 
-    /* Will send 404 error page if year is outside the bounds defined for this dataset */
-    if (isInYearBounds(year, res) == true) {
-        return
-    }
-
-    if (isInMonthBounds(month, res) == true) {
-        return
-    }
-
-    globalQueryConstraints = []
-    globalQueryConstraints.push(sector)
-    globalQueryConstraints.push(year)
-    globalQueryConstraints.push(month)
-    js_data_query =
-        ` SELECT total, biomass, waste, ethenol, wood, hydro_electric, geothermal, solar, wind,
+    canvasQuery =
+        `SELECT total, biomass, waste, ethenol, wood, hydro_electric, geothermal, solar, wind,
            biodiesel, renewable_diesel, other_biodiesel FROM MonthlySectorEnergy JOIN Sector ON MonthlySectorEnergy.sector_id=
            Sector.sector_id JOIN Month ON Month.month_id=MonthlySectorEnergy.month_id
            WHERE Sector.sector_name = ? AND MonthlySectorEnergy.year = ? AND Month.month = ?`
+    canvasQueryParams = [sector, year, month]
 
-    createPageFromDynamicTemplate('sector.html', (page) => {
+    createPageFromDynamicTemplate('sector.html', res, (page) => {
         // If there was an retrieval error -- redirect to 404 error page
-        if (page.toString().slice(0, 5) == 'Error') {
-            display404Page(res)
-            return
-        }
+        
         let query = `SELECT Image_1_ALT AS Img1, Image_2_ALT AS Img2, Image_3_ALT AS Img3 
         FROM Sector WHERE sector_name = ?`
         db.all(query, [sector], (err, rows) => {
@@ -328,9 +311,9 @@ app.get('/sector/:sector/monthly/:month/:year', (req, res) => {
 
 app.get('/state/:state', (req, res) => {
     let state = req.params.state
-    globalQueryConstraints = []
-    globalQueryConstraints.push(state)
-    js_data_query = `SELECT * FROM StateEnergy2020 WHERE state = ?`
+    
+    canvasQuery = `SELECT * FROM StateEnergy2020 WHERE state = ?`
+    canvasQueryParams = [state]
 
     //add Javascript to head
     // let graphData = ''
@@ -422,7 +405,7 @@ app.get('/javascript/state', (req, js_res) => {
             return
         }
 
-        db.all(js_data_query, globalQueryConstraints, (err, rows) => {
+        db.all(canvasQuery, canvasQueryParams, (err, rows) => {
             if (err) {
                 js_res.status(404).type('js').send(`Error: ${err}`)
                 return
@@ -461,9 +444,9 @@ app.get('/javascript/state', (req, js_res) => {
 // Dynamic path for Total Annual Data
 app.get('/total_annual/:year', (req, res) => {
     let year = req.params.year
-    globalQueryConstraints = []
-    globalQueryConstraints.push(year)
-    js_data_query = `SELECT * FROM Sector` // Query to retrieve data that will populate javascript graph
+   
+    canvasQuery = `SELECT * FROM Sector` // Query to retrieve data that will populate javascript graph
+    canvasQueryParams = [year]
 
     /* Will send 404 error page if year is outside the bounds defined for this dataset */
     if (isInYearBounds(year, res) == true) {
@@ -494,10 +477,8 @@ app.get('/total_monthly/:month/:year', (req, res) => {
     let year = parseInt(req.params.year)
     let tableQuery = `SELECT * FROM MonthlyEnergy WHERE month_id = ? AND year = ?`
 
-    globalQueryConstraints = []
-    globalQueryConstraints.push(year)
-    globalQueryConstraints.push(monthID)
-    js_data_query = `SELECT * from Sector` // Query to retrieve data that will populate javascript graph
+    canvasQuery = `SELECT * from Sector`
+    canvasQueryParams = [year, monthID]
 
     callDatabase(tableQuery, [monthID, year], res)
     .then((rows) => {
@@ -538,7 +519,7 @@ app.get('/javascript/total', (req, js_res) => {
             return
         }
 
-        db.all(js_data_query, globalQueryConstraints, (err, rows) => {
+        db.all(canvasQuery, canvasQueryParams, (err, rows) => {
             if (err) {
                 js_res.status(404).type('js').send(`Error: ${err}`)
                 return
@@ -605,7 +586,7 @@ function populateNavigation(template, res, callback) {
             )
         let annualPlaceholder = 
             createListElements(annualYears, (y) => 
-                `<a href="/total/annual/${y}">${y}</a>`
+                `<a href="/total_annual/${y}">${y}</a>`
             )
         let monthPlaceholder = 
             createNestedListElements(months, monthlyYears, (m, y) => 
