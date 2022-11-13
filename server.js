@@ -22,6 +22,19 @@ let js_data_query = `SELECT * from AnnualSectorEnergy`
 let min_year = 1949
 let max_year = 2021
 
+let states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
+    , 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii'
+    , 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana'
+    , 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi'
+    , 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey'
+    , 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma'
+    , 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota'
+    , 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington'
+    , 'West Virginia', 'Wisconsin', 'Wyoming']
+
+let months = ['January', 'Feburary', 'March', 'April', 'May', 'June', 'July',
+    'August', 'September', 'October', 'November', 'December']
+
 
 // Open SQLite3 database (in read-only mode)
 let db = new sqlite3.Database(db_filename, sqlite3.OPEN_READONLY, (err) => {
@@ -212,7 +225,7 @@ app.get('/javascript/sector', (req, js_res) => {
             let header = ``
             let row1data = ``
             for (let data in rows[0]) {
-                header += `<th>${data.slice(0,1).toUpperCase()+data.slice(1,data.length)}</th>`
+                header += `<th>${data.slice(0, 1).toUpperCase() + data.slice(1, data.length)}</th>`
                 let data_temp = rows[0][data]
                 if (data_temp == '') {
                     data_temp = 0
@@ -238,12 +251,8 @@ app.get('/javascript/sector', (req, js_res) => {
                 .replace('%%Data_Placeholder_2%%', format_data_2.slice(0, -1))
                 .replace('%%Sector%%', `${globalQueryConstraints[0]} Sector`)
                 .replace('%%table_data%%', table)
-            // .replace('%%total_Placeholder%%', parseFloat(rows[0].total) + 100)
-            // console.log(js_response)
             js_res.status(200).type('js').send(js_response)
         })
-        // create table that displays data
-
     })
 })
 
@@ -291,7 +300,6 @@ app.get('/sector/:sector/monthly/:month/:year', (req, res) => {
                 display404Page(res)
                 return
             }
-            // console.log(rows[0].Img1, rows[0].Img2, rows[0].Img3)
             let response = page
                 .toString()
                 .replace('%%Title_Placeholder%%', `${sector}:${month}:${year}`)
@@ -307,7 +315,6 @@ app.get('/sector/:sector/monthly/:month/:year', (req, res) => {
                 .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
                 .replace('%%Image_Descriptor_3%%', `${rows[0].Img3}`)
                 .replace('%%Sector_Type%%', `${sector}`)
-            // console.log(response)
             res.status(200).type('html').send(response)
         })
     })
@@ -358,7 +365,7 @@ app.get('/state/:state', (req, res) => {
             let header = ``
             let row1data = ``
             for (let data in rows[0]) {
-                header += `<th>${data.slice(0,1).toUpperCase()+data.slice(1,data.length)}</th>`
+                header += `<th>${data.slice(0, 1).toUpperCase() + data.slice(1, data.length)}</th>`
                 row1data += `<td>${rows[0][data]}</td>`;
             }
             let table = `<tr>${header}</tr>
@@ -450,18 +457,30 @@ app.get('/javascript/state', (req, js_res) => {
 // Dynamic path for Total Annual Data
 app.get('/total_annual/:year', (req, res) => {
     let year = req.params.year
+    globalQueryConstraints = []
+    globalQueryConstraints.push(year)
+    js_data_query = `SELECT * FROM Sector` // Query to retrieve data that will populate javascript graph
 
     /* Will send 404 error page if year is outside the bounds defined for this dataset */
     if (isInYearBounds(year, res) == true) {
         return
     }
 
-    createPageFromDynamicTemplate('total_annual.html', (page) => {
+    createPageFromDynamicTemplate('total.html', (page) => {
         if (page.toString().slice(0, 5) == 'Error') {
             display404Page(res)
             return
         }
-        res.status(200).type('html').send(page)
+
+        /* Put Database call and updated dynamic page placeholders here 
+        1. %%Title_Placeholder%% --> Title (browser table title)
+        2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
+        3. %%route%% --> Is the javascript route '/javascript/total'
+        
+        */
+        let finalPage = page
+        .replace('%%route%%', `/javascript/total`)
+        res.status(200).type('html').send(finalPage)
     })
 })
 
@@ -469,17 +488,21 @@ app.get('/total_annual/:year', (req, res) => {
 app.get('/total_monthly/:month_id/:year', (req, res) => {
     let monthID = req.params.month_id
     let year = req.params.year
+    globalQueryConstraints = []
+    globalQueryConstraints.push(year)
+    globalQueryConstraints.push(monthID)
+    js_data_query = `SELECT * from Sector` // Query to retrieve data that will populate javascript graph
 
     /* Will send 404 error page if year is outside the bounds defined for this dataset */
     if (isInYearBounds(year, res) == true) {
         return
     }
-
+    /* Will send 404 error page if month is outside the bounds defined */
     if (isInMonthBounds(monthID, res) == true) {
         return
     }
 
-    createPageFromDynamicTemplate('total_monthly.html', (page) => {
+    createPageFromDynamicTemplate('total.html', (page) => {
         if (page.toString().slice(0, 5) == 'Error') {
             display404Page(res)
             return
@@ -489,26 +512,44 @@ app.get('/total_monthly/:month_id/:year', (req, res) => {
         db.all(query, [year], (err, rows) => {
             let coalConsumption = rows.map((row) => row.coal)
             console.log(coalConsumption)
-            let finalPage = page.replace('%%Placeholder_Test%%', coalConsumption)
 
+            /* Put Database call and updated dynamic page placeholders here 
+        1. %%Title_Placeholder%% --> Title (browser table title)
+        2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
+        3. %%route%% --> Is the javascript route '/javascript/total'
+        */
+
+            let finalPage = page
+                .replace('%%Placeholder_Content%%', coalConsumption)
+                .replace('%%route%%', `/javascript/total`)
             res.status(200).type('html').send(finalPage)
         })
     })
 
 })
 
-let states = ['Alabama', 'Alaska', 'Arizona', 'Arkansas', 'California'
-    , 'Colorado', 'Connecticut', 'Delaware', 'Florida', 'Georgia', 'Hawaii'
-    , 'Idaho', 'Illinois', 'Indiana', 'Iowa', 'Kansas', 'Kentucky', 'Louisiana'
-    , 'Maine', 'Maryland', 'Massachusetts', 'Michigan', 'Minnesota', 'Mississippi'
-    , 'Missouri', 'Montana', 'Nebraska', 'Nevada', 'New Hampshire', 'New Jersey'
-    , 'New Mexico', 'New York', 'North Carolina', 'North Dakota', 'Ohio', 'Oklahoma'
-    , 'Oregon', 'Pennsylvania', 'Rhode Island', 'South Carolina', 'South Dakota'
-    , 'Tennessee', 'Texas', 'Utah', 'Vermont', 'Virginia', 'Washington'
-    , 'West Virginia', 'Wisconsin', 'Wyoming']
+app.get('/javascript/total', (req, js_res) => {
+    fs.readFile(path.join(js_dir, 'date.js'), 'utf-8', (err, js_page) => {
+        if (err) {
+            js_res.status(404).type('js').send(`Error: ${err}`)
+            return
+        }
 
-let months = ['January', 'Feburary', 'March', 'April', 'May', 'June', 'July',
-    'August', 'September', 'October', 'November', 'December']
+        db.all(js_data_query, globalQueryConstraints, (err, rows) => {
+            if (err) {
+                js_res.status(404).type('js').send(`Error: ${err}`)
+                return
+            }
+            /* 
+                1. %%Data_Placeholder%% --> Place Graph Data here after format
+            */
+
+            js_res.status(200).type('js').send(js_page)
+        })
+        // create table that displays data
+
+    })
+})
 
 function createPageFromDynamicTemplate(contentFileName, onContentInserted) {
     let contentPath = path.join(template_dir, contentFileName)
