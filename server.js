@@ -125,6 +125,10 @@ function checkBounds(year, month, dbType) {
     })
 }
 
+function capitalize(value) {
+    return `${value.slice(0,1).toUpperCase()}${value.slice(1, value.length)}`
+}
+
 // Dynamic File path for homepage --> index.html
 app.get('/homepage', (req, res) => {
 
@@ -196,7 +200,7 @@ app.get('/sector/:sector/annual/:year', (req, res) => {
     let sector = req.params.sector
     let year = req.params.year
 
-    sector = sector.slice(0, 1).toUpperCase() + sector.slice(1, sector.length)
+    sector = capitalize(sector)
 
     checkBounds(year, null, "AnnualSectorEnergy")
         .then((result) => {
@@ -271,7 +275,7 @@ app.get('/javascript/sector', (req, js_res) => {
             let header = ``
             let row1data = ``
             for (let data in rows[0]) {
-                header += `<th>${data.slice(0, 1).toUpperCase() + data.slice(1, data.length)}</th>`
+                header += `<th>${capitalize(data)}</th>`
                 let data_temp = rows[0][data]
                 if (data_temp == '') {
                     data_temp = 0
@@ -283,7 +287,7 @@ app.get('/javascript/sector', (req, js_res) => {
             let format_data = ``
             let format_data_2 = ``
             for (let data in rows[0]) {
-                let label_name = data.charAt(0).toUpperCase() + data.slice(1)
+                let label_name = capitalize(data)
                 if (rows[0][data] != '') {
                     if (label_name !== 'Biomass' & label_name !== 'Total') {
                         format_data_2 += `{ y: ${rows[0][data]}, label: "${label_name}"},`
@@ -310,8 +314,8 @@ app.get('/sector/:sector/monthly/:month/:year', (req, res) => {
     let year = parseInt(req.params.year)
     let month = req.params.month
 
-    month = month.slice(0, 1).toUpperCase() + month.slice(1, month.length)
-    sector = sector.slice(0, 1).toUpperCase() + sector.slice(1, sector.length)
+    month = capitalize(month)
+    sector = capitalize(sector)
 
     checkBounds(year, month, "MonthlySectorEnergy")
         .then((result) => {
@@ -367,7 +371,7 @@ app.get('/sector/:sector/monthly/:month/:year', (req, res) => {
 app.get('/state/:state', (req, res) => {
     let state = req.params.state
 
-    state = state.slice(0, 1).toUpperCase() + state.slice(1, state.length)
+    state = capitalize(state)
 
     canvasQuery = `SELECT * FROM StateEnergy2020 WHERE state = ?`
     canvasQueryParams = [state]
@@ -409,7 +413,7 @@ app.get('/state/:state', (req, res) => {
             let header = ``
             let row1data = ``
             for (let data in rows[0]) {
-                header += `<th>${data.slice(0, 1).toUpperCase() + data.slice(1, data.length)}</th>`
+                header += `<th>${capitalize(data)}</th>`
                 row1data += `<td>${rows[0][data]}</td>`;
             }
             let table = `<tr>${header}</tr>
@@ -470,7 +474,7 @@ app.get('/javascript/state', (req, js_res) => {
             let format_data = ``
             let largest_val = 0
             for (let data in rows[0]) {
-                let label_name = data.charAt(0).toUpperCase() + data.slice(1)
+                let label_name = capitalize(data)
                 let current_val = parseFloat(rows[0][data])
                 if (current_val != 0 & label_name != 'State') {
                     if (current_val > largest_val) {
@@ -538,7 +542,8 @@ app.get('/total_annual/:year', (req, res) => {
 // Dynamic path for Total Monthly Data
 app.get('/total_monthly/:month/:year', (req, res) => {
     let month = req.params.month
-    month = month.slice(0,1).toUpperCase()+month.slice(1,month.length)
+
+    month = capitalize(month)
 
     let monthID = getMonthID(month)
     let year = parseInt(req.params.year)
