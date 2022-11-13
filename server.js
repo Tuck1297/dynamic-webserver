@@ -536,7 +536,7 @@ app.get('/total_monthly/:month/:year', (req, res) => {
     let month = capitalize(req.params.month)
     let monthID = getMonthID(month)
     let year = parseInt(req.params.year)
-    canvasQuery = `SELECT * from MonthlyEnergy WHERE month_id = ? AND year = ?`
+    canvasQuery = `SELECT * from MonthlyEnergy WHERE year = ? AND month_id = ?`
     canvasQueryParams = [year, monthID]
 
     checkBounds(year, month, "MonthlyEnergy")
