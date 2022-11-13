@@ -507,36 +507,37 @@ app.get('/javascript/state', (req, js_res) => {
 
 // Dynamic path for Total Annual Data
 app.get('/total_annual/:year', (req, res) => {
-    let year = req.params.year
+    let year = parseInt(req.params.year)
    
     canvasQuery = `SELECT * FROM Sector WHERE year = ?` // Query to retrieve data that will populate javascript graph
     canvasQueryParams = [year]
 
     /* Will send 404 error page if year is outside the bounds defined for this dataset */
     checkBounds(year, null, "AnnualEnergy")
-        .then((result) => {
-            if (result == true) {
+    .then((result) => {
+        if (result == true) {
+            display404Page(res, `Error: no data for total_annual/${year}`)
+            return
+        }
+
+        createPageFromDynamicTemplate('total.html', res, (page) => {
+            if (page.toString().slice(0, 5) == 'Error') {
                 display404Page(res, `Error: no data for total_annual/${year}`)
                 return
             }
-
-                    createPageFromDynamicTemplate('total.html', res, (page) => {
-                        if (page.toString().slice(0, 5) == 'Error') {
-                            display404Page(res, `Error: no data for total_annual/${year}`)
-                            return
-                        }
-                        // build table to display data here
-                        /* Put Database call and updated dynamic page placeholders here 
-                        1. %%Title_Placeholder%% --> Title (browser table title)
-                        2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
-                        3. %%route%% --> Is the javascript route '/javascript/total'
-                        
-                */        
-                        res.status(200).type('html').send(
-                            page.replace('%%route%%', `/javascript/total`)
-                        )
-                    })
-            })
+            // build table to display data here
+            /* Put Database call and updated dynamic page placeholders here 
+            1. %%Title_Placeholder%% --> Title (browser table title)
+            2. %%Placeholder_Content%% --> Where to place table (located in total.html file)
+            3. %%route%% --> Is the javascript route '/javascript/total'
+            
+    */        
+            res.status(200).type('html').send(
+                page.replace('%%route%%', `/javascript/total`)
+                    .replace('%%Title%%', `${year}`)
+            )
+        })
+    })
 })
 
 // Dynamic path for Total Monthly Data
@@ -556,9 +557,8 @@ app.get('/total_monthly/:month/:year', (req, res) => {
 
         createPageFromDynamicTemplate('total.html', res, (page) => {        
             res.status(200).type('html').send(
-                page.replace('%%Title_Placeholder%%', `${month} ${year}`)
-                    .replace('%%Total_Title%%', `${month} ${year}`)
-                    .replace('%%route%%', `/javascript/total`)
+                page.replace('%%route%%', `/javascript/total`)
+                    .replace('%%Title%%', `${month} ${year}`)
             )
         })
     })
@@ -587,12 +587,6 @@ app.get('/javascript/total', (req, js_res) => {
         }
 
         db.all(canvasQuery, canvasQueryParams, (err, rows) => {
-            console.log(`rows: ${rows}`);
-            for(let data in rows[0]) {
-                if (rows[0][data] == '') {
-                    rows[0][data] = 0
-                }
-            }
             if (err) {
                 js_res.status(404).type('js').send(`Error: ${err}`)
                 return
@@ -604,12 +598,16 @@ app.get('/javascript/total', (req, js_res) => {
                 return
             }
 
+            for(let property in rows[0]) {
+                if (rows[0][property] == '') {
+                    rows[0][property] = 0
+                }
+            }
+
             let [monthID, year] = canvasQueryParams
-            let month = months[monthID]
+            let month = getMonthFromID(monthID)
             let rowEntries = Object.entries(rows[0])
-
-            //console.log(`entries: ${rowEntries}`);
-
+                  
             let tableHeaders = rowEntries
                 .map( ([key, value]) => `<th>${capitalize(key)}</th>` )
                 .join('')
@@ -621,61 +619,20 @@ app.get('/javascript/total', (req, js_res) => {
             let table = `<tr>${tableHeaders}</tr><tr>${tableRows}</tr>`
 
             let dataPoints = rowEntries
+                .filter( ([key, value]) => key != 'year' && key != 'month_id' )
                 .map( ([key, value]) => `{ y: ${parseFloat(value)}, label: "${capitalize(key)}" }` )
                 .join(', ')
             
+                
             js_res.status(200).type('js').send(
                 js_file
                     .toString()
                     .replace('%%Graph_Data%%', dataPoints)
                     .replace('%%Type_Data%%', table)
-                    .replace('%%Title%%', `${month}, ${year}`)
+                    .replace('%%Chart_Title%%', `Energy Consumption in ${month} ${year}`)
                     .replace('%%Table_Html%%', table)
             )
-
-            // js_res.status(200).type('js').send(js_file)
         })
-    
-
-        // db.all(canvasQuery, canvasQueryParams, (err, rows) => {
-        //     if (err) {
-        //         js_res.status(404).type('js').send(`Error: ${err}`)
-        //         return
-        //     }
-            
-        //     let header
-        //     let rowData = ``
-        //     for (let data in rows[0]) {
-        //         header =`<th>${data.slice(0, 1).toUpperCase() + data.slice(1, data.length)}</th>`
-        //         let data_temp = rows[0][data]
-        //         if (data_temp == '') {
-        //             data_temp = 0
-        //         }
-        //         rowData += `<td>${data_temp}</td>`;
-        //     }
-
-        //     let table = `<tr>${header}</tr><tr>${rowData}</tr>`
-        //     let format_data = ``
-        //     let format_data_2 = ``
-        //     for (let data in rows[0]) {
-        //         let label_name = data.charAt(0).toUpperCase() + data.slice(1)
-        //         if (rows[0][data] != '') {
-        //             if (label_name !== 'Biomass' & label_name !== 'Total') {
-        //                 format_data_2 += `{ y: ${rows[0][data]}, label: "${label_name}"},`
-        //             }
-        //             format_data += `{ y: ${rows[0][data]}, label: "${label_name}"},`
-        //         }
-        //     }
-        //     let js_response = js_page
-        //         .toString()
-        //         .replace('%%Data_Placeholder%%', format_data.slice(0, -1))
-        //         .replace('%%Data_Placeholder_2%%', format_data_2.slice(0, -1))
-        //         .replace('%%Sector%%', `${canvasQueryParams[0]} Sector`)
-        //         .replace('%%table_data%%', table)
-        //     js_res.status(200).type('js').send(js_response)
-
-        //     js_res.status(200).type('js').send(js_page)
-        // })
     })
 })
 
@@ -824,6 +781,10 @@ function getMonthID(month) {
     return months
         .map((m) => m.toLowerCase())
         .indexOf(month.toLowerCase()) + 1
+}
+
+function getMonthFromID(monthID) {
+    return months[monthID - 1] 
 }
 
 /*

@@ -7,7 +7,7 @@ var chart = new CanvasJS.Chart("chartContainer", {
     animationEnabled: true,
     
     title:{
-        text:"%%Title%%"
+        text:"%%Chart_Title%%"
     },
     axisX:{
         interval: 1
