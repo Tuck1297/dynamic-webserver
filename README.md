@@ -16,19 +16,15 @@ sustainability topic chosen by the students working on this project.
     /state/:state
 ```
 
-## TODO
-- Error code still needs to be created for each unique dynamic path.
-- Need to rename images to easily retrieve by type and by sector. 
-- Still need to find images for states
-- need to resize images to size want to display on website
+## View and Interact with the Project
 
-## Comments
+This project was created locally and not hosted at this time. Therefore, to interact with this project, here are the steps one needs to take. 
 
-Navigation works across all dynampic paths. 
-
-Website templates for navigation have been created. Need to finish design phase for rest of page. 
-
-Added some basic foundation code to the error client response webpage (.html file).
+1. Clone this project to your own local environment. 
+2. This project was created using Node.js so one must make sure this is in part of their environment. 
+3. After cloning the project, open the terminal and execute the following command: node server.js 
+4. If there are no error codes that arise in the terminal upon execution navigate to your browser and type in the following link: localhost:8000
+5. You should now see and interact with the project. 
 
 
 ## Image Research
